@@ -2,10 +2,19 @@ import React from 'react';
 import FastTab from './components/FastTab';
 import FriendsTab from './components/FriendsTab';
 import MeTab from './components/MeTab';
+import Auth from './components/Auth/Signup';
 import './App.css';
 
 function App() {
   const [activeTab, setActiveTab] = React.useState('fast');
+
+    // Add state variable to track if the user is authenticated
+    const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+
+    // Conditionally render content based on authentication status
+    if (!isAuthenticated) {
+        return <Auth setIsAuthenticated={setIsAuthenticated} />;
+    }
 
   return (
     <div className="App">
