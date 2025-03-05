@@ -1,38 +1,62 @@
 .App {
   text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .App-header {
   background-color: #282c34;
-  min-height: 100vh;
+  min-height: 70px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  width: 100%; /* Make header span the full width */
+  position: sticky;
+  top: 0;
+  z-index: 100; /* Ensure it stays on top */
 }
 
-.App-link {
-  color: #61dafb;
+main {
+  flex-grow: 1;
+  padding: 20px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.banner {
+  background-color: #e0f2f1; /* Light Teal */
+  color: #2e7d32; /* Dark Green */
+  padding: 12px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+}
+
+.bottom-nav {
+  background-color: #f0f0f0;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+  width: 100%; /* Make bottom nav span the full width */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 100; /* Ensure it stays on top of other content */
+}
+
+.bottom-nav button {
+  padding: 10px 20px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.bottom-nav button.active {
+  font-weight: bold;
+  color: #007bff;
 }

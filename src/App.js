@@ -1,23 +1,42 @@
-import logo from './logo.svg';
+import React from 'react';
+import FastTab from './components/FastTab';
+import FriendsTab from './components/FriendsTab';
+import MeTab from './components/MeTab';
 import './App.css';
 
 function App() {
+  const [activeTab, setActiveTab] = React.useState('fast');
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <h1>My Fasting Friends</h1>
       </header>
+      <main>
+        {activeTab === 'fast' && <FastTab />}
+        {activeTab === 'friends' && <FriendsTab />}
+        {activeTab === 'me' && <MeTab />}
+      </main>
+      <nav className="bottom-nav">
+        <button
+          className={activeTab === 'fast' ? 'active' : ''}
+          onClick={() => setActiveTab('fast')}
+        >
+          Fast
+        </button>
+        <button
+          className={activeTab === 'friends' ? 'active' : ''}
+          onClick={() => setActiveTab('friends')}
+        >
+          Friends
+        </button>
+        <button
+          className={activeTab === 'me' ? 'active' : ''}
+          onClick={() => setActiveTab('me')}
+        >
+          Me
+        </button>
+      </nav>
     </div>
   );
 }
