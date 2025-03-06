@@ -1,93 +1,68 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function FriendsTab() {
-  const [challengeStatus, setChallengeStatus] = React.useState('empty'); // 'empty', 'pending', 'active'
-  const [challengeStartDate, setChallengeStartDate] = React.useState(new Date(Date.now() + 86400000)); // Tomorrow
-  const [leaderboardData, setLeaderboardData] = React.useState([
-    { name: 'User 1', progress: 80, status: 'onTrack' },
-    { name: 'User 2', progress: 60, status: 'lagging' },
-    { name: 'User 3', progress: 40, status: 'offTrack' },
-  ]);
-
-  const ChallengeCountdown = ({ startDate }) => {
-    const [timeRemaining, setTimeRemaining] = React.useState(getTimeRemaining(startDate));
-
-    React.useEffect(() => {
-      const intervalId = setInterval(() => {
-        setTimeRemaining(getTimeRemaining(startDate));
-      }, 1000); // Update every second
-
-      return () => clearInterval(intervalId); // Clean up the interval on unmount
-    }, [startDate]);
-
-    function getTimeRemaining(startDate)
-    {
-      const total = Date.parse(startDate) - Date.parse(new Date());
-      const seconds = Math.floor( (total/1000) % 60 );
-      const minutes = Math.floor( (total/1000/60) % 60 );
-      const hours = Math.floor( (total/(1000*60*60)) % 24 );
-      const days = Math.floor( total/(1000*60*60*24) );
-      return {
-        total,
-        days,
-        hours,
-        minutes,
-        seconds
-      };
-    }
-
-    return (
-      <div>
-        Starts in {timeRemaining.days} days, {timeRemaining.hours} hours, {timeRemaining.minutes} minutes, {timeRemaining.seconds} seconds!
-      </div>
+  // For simplicity, we're focusing only on WhatsApp invites now
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleInviteViaWhatsApp = () => {
+    // Create invitation message
+    const message = encodeURIComponent(
+      "Want to lose weight or gain focus? Let's do it together. Join me on My Fasting Friends. Link: https://my-fasting-friends-app.web.app"
     );
-  };
-
-  const LeaderboardItem = ({ name, progress, status }) => {
-    let statusIcon = '🟢';
-    if (status === 'lagging') {
-      statusIcon = '🟡';
-    } else if (status === 'offTrack') {
-      statusIcon = '🔴';
-    }
-
-    return (
-      <div>
-        {name} - {progress}% {statusIcon}
-      </div>
-    );
-  };
-
-  const Leaderboard = ({ leaderboardData }) => {
-    return (
-      <div>
-        {leaderboardData.map((user, index) => (
-          <LeaderboardItem
-            key={index}
-            name={user.name}
-            progress={user.progress}
-            status={user.status}
-          />
-        ))}
-      </div>
-    );
+    
+    // Generate WhatsApp URL
+    const whatsappUrl = `https://wa.me/?text=${message}`;
+    
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank');
   };
 
   return (
-    <div>
-      <h2>Friends Tab</h2>
-      {challengeStatus === 'empty' && (
-        <div>
-          <p>Invite friends via WhatsApp!</p>
-          <button>Invite via WhatsApp</button> {/* Placeholder */}
+    <div className="friends-tab">
+      <h2>Invite Friends</h2>
+      
+      <div className="invite-section">
+        <div className="invite-card">
+          <div className="invite-icon">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/767px-WhatsApp.svg.png" 
+                 alt="WhatsApp" width="60" />
+          </div>
+          <div className="invite-content">
+            <h3>Share via WhatsApp</h3>
+            <p>Invite your friends to join you on your fasting journey</p>
+            
+            <button
+              onClick={handleInviteViaWhatsApp}
+              disabled={isLoading}
+              className="primary-button whatsapp-button"
+            >
+              Invite Friend
+            </button>
+          </div>
         </div>
-      )}
-      {challengeStatus === 'pending' && (
-        <ChallengeCountdown startDate={challengeStartDate} />
-      )}
-      {challengeStatus === 'active' && (
-        <Leaderboard leaderboardData={leaderboardData} />
-      )}
+      </div>
+      
+      <div className="coming-soon-section">
+        <h3>Coming Soon</h3>
+        <p>Friend requests, challenges, and leaderboards will be available in the next update!</p>
+        
+        <div className="feature-preview">
+          <div className="feature-card">
+            <h4>7-Day Challenges</h4>
+            <p>Create and join fasting challenges with your friends</p>
+          </div>
+          
+          <div className="feature-card">
+            <h4>Leaderboards</h4>
+            <p>See who's most consistent with their fasting goals</p>
+          </div>
+          
+          <div className="feature-card">
+            <h4>Achievement Badges</h4>
+            <p>Earn badges for completing fasting milestones</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

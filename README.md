@@ -1,37 +1,96 @@
-# My Fasting Friends 🕯️  
-**Fast Together, Stay Motivated**  
-*A social app for friends to conquer fasting goals together — with a pinch of drama!*  
+# My Fasting Friends
 
----
+A social-first fasting app where users track 7-day challenges, compete via leaderboards, and motivate friends through WhatsApp integration.
 
-## 👋 About Me  
-Hi! I'm **Raghuveer** ✨  
-🥘 Culture Enthusiast | 📖 Storyteller-at-Heart | 🎶 Carnatic Music Lover | 🥑 Fasting Newbie  
+## Local Development Setup
 
-I built this app to merge my love for **community-driven rituals** (hello, South Indian family WhatsApp groups!) with tech. Fasting’s always been a cultural cornerstone for me, and I wanted to make it fun, social, and slightly competitive — because who doesn’t love a good taunting emoji war?  
+### Prerequisites
+- Node.js (v14 or higher)
+- npm (v6 or higher)
+- Firebase account with a project set up
 
----
+### Setup Steps
 
-## 🌟 Why My Fasting Friends?  
-Sticking to fasting goals alone is tough. This app brings friends together to:  
-- **Track progress** with Apple Fitness-style rings 🎯  
-- **Compete** on a real-time leaderboard 🏆  
-- **Shower each other** with 👏, 😂, or (friendly) taunts via WhatsApp 💬  
+1. Clone the repository
+   ```
+   git clone <repository-url>
+   cd my-fasting-friends
+   ```
 
-Think of it as *"Strava for intermittent fasting"* — but with more humor and fewer Lycra shorts.  
+2. Install dependencies
+   ```
+   npm install
+   ```
 
----
+3. Set up Firebase configuration
+   - Ensure your Firebase configuration in `src/firebase.js` is correct
+   - Enable Phone Authentication in the Firebase Console:
+     - Go to Authentication > Sign-in methods
+     - Enable Phone provider
+     - Add test phone numbers if testing in development
 
-## 🚀 Features  
-1. **Fasting Rings**  
-   - Daily & weekly progress animations (glow when crushing goals!).  
-   - Instant stats: “Fast ends in 2h!” 📅  
+4. Start the local development server
+   ```
+   npm start
+   ```
+   This will run the app in development mode. Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-2. **Roast-Worthy Leaderboard**  
-   - Friends ranked by dedication. Lagging? Expect a 😜 poke!  
+## Testing Authentication Locally
 
-3. **WhatsApp-First Social**  
-   - Invite friends, send reactions, + OTP login — no apps to install!  
+When testing authentication locally:
 
-4. **Flexible Scheduling**  
-   - Start challenges anytime (no waiting for Sundays).  
+1. **Use real phone numbers in development**:
+   - Authentication with phone numbers requires a real phone to receive SMS
+   - You can add test phone numbers in Firebase Console for development
+
+2. **Testing with Firebase Local Emulator (Advanced)**:
+   - Firebase provides emulators for local testing without affecting production data
+   - Install Firebase CLI: `npm install -g firebase-tools`
+   - Run emulators: `firebase emulators:start`
+   - Configure your app to use emulators (requires code changes)
+
+## Deployment
+
+### Firebase Hosting Deployment
+
+1. Build the production version:
+   ```
+   npm run build
+   ```
+
+2. Deploy to Firebase Hosting:
+   ```
+   firebase deploy
+   ```
+
+### Deployment Checklist
+
+Before deploying to production:
+
+1. Verify Firebase Security Rules are properly configured
+2. Ensure environment variables are set correctly
+3. Test authentication flow completely
+4. Validate database operations
+
+## Project Structure
+
+- `/src`
+  - `/components` - React components
+  - `/services` - Firebase service functions
+  - `App.js` - Main app component
+  - `firebase.js` - Firebase configuration
+
+## Database Structure
+
+See `database-design.md` for the complete database structure documentation.
+
+## Roadmap
+
+- [x] Basic authentication with phone numbers
+- [x] Fasting tracking functionality
+- [x] Firebase integration
+- [ ] Friend requests and social connections
+- [ ] 7-day challenges
+- [ ] Leaderboards  
+- [ ] WhatsApp sharing integration
+

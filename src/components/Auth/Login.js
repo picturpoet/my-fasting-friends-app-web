@@ -4,7 +4,7 @@ function Login() {
   return (
     <div>
       <h2>Login</h2>
-      <p>This is the Login component.  Sign up to get started.</p>
+      <p>Please log in to continue.</p>
     </div>
   );
 }
