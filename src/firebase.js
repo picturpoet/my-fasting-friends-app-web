@@ -16,6 +16,12 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// For testing purposes only - allows testing phone auth in emulators
+if (process.env.NODE_ENV === 'development') {
+  auth.settings = { appVerificationDisabledForTesting: true };
+}
+
 const db = getFirestore(app);
 
 export { auth, db };

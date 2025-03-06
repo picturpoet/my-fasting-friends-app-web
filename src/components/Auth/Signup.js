@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { auth } from '../../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { createUserProfile } from '../../services/firestoreService';
@@ -13,6 +13,7 @@ function Signup({ setIsAuthenticated }) {
   const [showVerification, setShowVerification] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const recaptchaContainerRef = useRef(null);
 
   // Set up reCAPTCHA verifier when component mounts
   useEffect(() => {
@@ -20,41 +21,18 @@ function Signup({ setIsAuthenticated }) {
     if (window.recaptchaVerifier) {
       try {
         window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
       } catch (error) {
         console.error("Error clearing recaptcha:", error);
       }
     }
 
-    const setupRecaptcha = () => {
-      try {
-        // Create a div element for the recaptcha
-        const recaptchaContainer = document.getElementById('recaptcha-container');
-        
-        // Create a new reCAPTCHA verifier
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainer, {
-          size: 'invisible',
-          callback: () => {
-            console.log("reCAPTCHA verified successfully");
-          },
-          'expired-callback': () => {
-            console.log("reCAPTCHA expired");
-            setError("reCAPTCHA expired. Please try again.");
-          }
-        });
-      } catch (error) {
-        console.error("Error setting up reCAPTCHA:", error);
-        setError(`reCAPTCHA setup failed: ${error.message}`);
-      }
-    };
-
-    // Set a short timeout to ensure DOM is ready
-    setTimeout(setupRecaptcha, 1000);
-    
-    // Cleanup function
+    // Only setup reCAPTCHA when we need it, not on initial load
     return () => {
       if (window.recaptchaVerifier) {
         try {
           window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = null;
         } catch (error) {
           console.error("Error clearing recaptcha on unmount:", error);
         }
@@ -64,19 +42,33 @@ function Signup({ setIsAuthenticated }) {
 
   const setupRecaptcha = () => {
     try {
-      // Create a div element for the recaptcha
-      const recaptchaContainer = document.getElementById('recaptcha-container');
+      // Clear any existing verifier
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (error) {
+          console.error("Error clearing existing reCAPTCHA:", error);
+        }
+      }
       
-      // Create a new reCAPTCHA verifier
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainer, {
+      // Create a new reCAPTCHA verifier with string ID
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         size: 'invisible',
         callback: () => {
-          console.log("reCAPTCHA re-verified successfully");
+          console.log("reCAPTCHA verified successfully");
         }
       });
+      
+      // Render it so it's ready for use
+      window.recaptchaVerifier.render().then(widgetId => {
+        window.recaptchaWidgetId = widgetId;
+      });
+
+      return true;
     } catch (error) {
-      console.error("Error re-setting up reCAPTCHA:", error);
-      setError(`reCAPTCHA re-setup failed: ${error.message}`);
+      console.error("Error setting up reCAPTCHA:", error);
+      setError(`reCAPTCHA setup failed: ${error.message}`);
+      return false;
     }
   };
 
@@ -90,14 +82,16 @@ function Signup({ setIsAuthenticated }) {
         formattedPhone = `+91${phoneNumber}`;
       }
       
-      // Ensure recaptcha verifier is ready
+      // Setup reCAPTCHA if it doesn't exist
       if (!window.recaptchaVerifier) {
-        setupRecaptcha();
-        // Give it a moment to initialize
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const result = setupRecaptcha();
+        if (!result) {
+          setIsLoading(false);
+          return;
+        }
       }
       
-      // Use the existing recaptchaVerifier instance
+      // Use the recaptchaVerifier instance
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
       setConfirmationResult(confirmation);
       setShowVerification(true);
@@ -115,9 +109,6 @@ function Signup({ setIsAuthenticated }) {
           console.error("Error clearing recaptcha:", clearError);
         }
       }
-      
-      // Set up reCAPTCHA again after a brief pause
-      setTimeout(setupRecaptcha, 1000);
     } finally {
       setIsLoading(false);
     }
@@ -184,8 +175,8 @@ function Signup({ setIsAuthenticated }) {
         </div>
         <h2>Welcome to My Fasting Friends</h2>
         
-        {/* Create a dedicated container for reCAPTCHA - invisible but needs to be in the DOM */}
-        <div id="recaptcha-container"></div>
+        {/* Create a dedicated container for reCAPTCHA */}
+        <div id="recaptcha-container" ref={recaptchaContainerRef}></div>
         
         <p>Join our community of fasting enthusiasts and track your progress with friends.</p>
         
