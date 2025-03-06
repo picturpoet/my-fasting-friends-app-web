@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth } from '../../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { createUserProfile } from '../../services/firestoreService';
@@ -13,7 +13,6 @@ function Signup({ setIsAuthenticated }) {
   const [showVerification, setShowVerification] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const recaptchaContainerRef = useRef(null);
 
   // Set up reCAPTCHA verifier when component mounts
   useEffect(() => {
@@ -21,18 +20,21 @@ function Signup({ setIsAuthenticated }) {
     if (window.recaptchaVerifier) {
       try {
         window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = null;
       } catch (error) {
         console.error("Error clearing recaptcha:", error);
       }
     }
 
-    // Only setup reCAPTCHA when we need it, not on initial load
+    // Create a new reCAPTCHA verifier
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible'
+    });
+
+    // Cleanup function
     return () => {
       if (window.recaptchaVerifier) {
         try {
           window.recaptchaVerifier.clear();
-          window.recaptchaVerifier = null;
         } catch (error) {
           console.error("Error clearing recaptcha on unmount:", error);
         }
@@ -51,19 +53,11 @@ function Signup({ setIsAuthenticated }) {
         }
       }
       
-      // Create a new reCAPTCHA verifier with string ID
+      // Create a new reCAPTCHA verifier
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => {
-          console.log("reCAPTCHA verified successfully");
-        }
+        size: 'invisible'
       });
       
-      // Render it so it's ready for use
-      window.recaptchaVerifier.render().then(widgetId => {
-        window.recaptchaWidgetId = widgetId;
-      });
-
       return true;
     } catch (error) {
       console.error("Error setting up reCAPTCHA:", error);
@@ -82,15 +76,6 @@ function Signup({ setIsAuthenticated }) {
         formattedPhone = `+91${phoneNumber}`;
       }
       
-      // Setup reCAPTCHA if it doesn't exist
-      if (!window.recaptchaVerifier) {
-        const result = setupRecaptcha();
-        if (!result) {
-          setIsLoading(false);
-          return;
-        }
-      }
-      
       // Use the recaptchaVerifier instance
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
       setConfirmationResult(confirmation);
@@ -101,14 +86,7 @@ function Signup({ setIsAuthenticated }) {
       setError(`Failed to send verification code: ${error.message}`);
       
       // Reset reCAPTCHA on error
-      if (window.recaptchaVerifier) {
-        try {
-          window.recaptchaVerifier.clear();
-          window.recaptchaVerifier = null;
-        } catch (clearError) {
-          console.error("Error clearing recaptcha:", clearError);
-        }
-      }
+      setupRecaptcha();
     } finally {
       setIsLoading(false);
     }
@@ -176,7 +154,7 @@ function Signup({ setIsAuthenticated }) {
         <h2>Welcome to My Fasting Friends</h2>
         
         {/* Create a dedicated container for reCAPTCHA */}
-        <div id="recaptcha-container" ref={recaptchaContainerRef}></div>
+        <div id="recaptcha-container"></div>
         
         <p>Join our community of fasting enthusiasts and track your progress with friends.</p>
         
