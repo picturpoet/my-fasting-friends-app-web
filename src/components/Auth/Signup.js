@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../firebase'; // Import Firebase functions
+import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../../firebase'; // Import Firebase functions
 
-function Signup() {
+function Signup({ setIsAuthenticated }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [confirmationResult, setConfirmationResult] = useState(null);
@@ -9,10 +9,15 @@ function Signup() {
   const handleSendVerificationCode = () => {
     const appVerifier = window.recaptchaVerifier;
     signInWithPhoneNumber(auth, phoneNumber, appVerifier)
-      .then((result) => {
-        setConfirmationResult(result);
-        alert("SMS sent!");
+      .then((confirmationResult) => {
+        // SMS sent. Prompt user to enter the code.
+        window.confirmationResult = confirmationResult;
+        // SMS sent. Prompt user to enter the code.
+        setConfirmationResult(confirmationResult);
+        alert("SMS Sent");
       }).catch((error) => {
+        // Error; SMS not sent
+          alert("Error: SMS not sent");
         console.error("Error sending verification code:", error);
       });
   };
@@ -21,10 +26,12 @@ function Signup() {
     confirmationResult.confirm(verificationCode).then((result) => {
       // User signed in successfully.
       const user = result.user;
+        setIsAuthenticated(true);
       alert("User verified successfully!");
       // ...
     }).catch((error) => {
       // User couldn't sign in (bad verification code, invalid code, etc.)
+      alert("Error: User couldn't sign in");
       console.error("Error verifying code:", error);
     });
   };
@@ -33,7 +40,7 @@ function Signup() {
     <div>
       <h2>Signup</h2>
       <div id="sign-in-button"></div>
-      <p>This is the Signup component.</p>
+      <p>This is the Signup component.  Sign up to get started.</p>
       <div>
         <label htmlFor="phoneNumber">Phone Number:</label>
         <input

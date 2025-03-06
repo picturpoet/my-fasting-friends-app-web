@@ -1,8 +1,10 @@
 {
   "name": "my-fasting-friends",
   "version": "0.1.0",
+  "homepage": "/",
   "private": true,
   "dependencies": {
+    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
