@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { auth, RecaptchaVerifier } from '../../firebase';
 import { signInWithPhoneNumber } from "firebase/auth";
 import { createUserProfile } from '../../services/firestoreService';
-import logo from '../../logo512.png'; // Import the logo
 
 function Signup({ setIsAuthenticated }) {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -14,12 +13,10 @@ function Signup({ setIsAuthenticated }) {
 
   // For testing only - bypass phone auth
   const handleTestLogin = () => {
-    // Set logged in state in localStorage
     localStorage.setItem('user', JSON.stringify({
       uid: 'test-user-id',
       phoneNumber: '+91' + phoneNumber
     }));
-    
     setIsAuthenticated(true);
   };
 
@@ -28,7 +25,6 @@ function Signup({ setIsAuthenticated }) {
       setIsLoading(true);
       setError('');
       
-      // Format phone number to E.164 standard if needed
       let formattedPhone = phoneNumber;
       if (!phoneNumber.startsWith('+')) {
         formattedPhone = `+91${phoneNumber}`; // Assuming India country code
@@ -65,22 +61,16 @@ function Signup({ setIsAuthenticated }) {
       setIsLoading(true);
       setError('');
       
-      // Confirm the verification code
       const result = await confirmationResult.confirm(verificationCode);
-      
-      // User successfully signed in
       const user = result.user;
       
-      // Create or update user profile in Firestore
       await createUserProfile(user.uid, user.phoneNumber);
       
-      // Store basic user info in localStorage
       localStorage.setItem('user', JSON.stringify({
         uid: user.uid,
         phoneNumber: user.phoneNumber
       }));
       
-      // Update authentication state
       setIsAuthenticated(true);
     } catch (error) {
       console.error("Error verifying code:", error);
@@ -93,7 +83,7 @@ function Signup({ setIsAuthenticated }) {
   return (
     <div className="auth-container">
       <div className="hero-image">
-        <img src={logo} alt="My Fasting Friends Logo" />
+        <img src="/logo512.png" alt="My Fasting Friends Logo" />
       </div>
       <h2>Welcome to My Fasting Friends</h2>
       <div id="sign-in-button"></div>
