@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, RecaptchaVerifier } from '../../firebase';
 import { signInWithPhoneNumber } from "firebase/auth";
 import { createUserProfile } from '../../services/firestoreService';
+import '../../App.css';
 
 function Signup({ setIsAuthenticated }) {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -11,15 +12,75 @@ function Signup({ setIsAuthenticated }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Set up reCAPTCHA verifier when component mounts
   useEffect(() => {
-    // Initialize reCAPTCHA when component mounts
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-      callback: () => {
-        // reCAPTCHA solved
+    // Clean up any existing recaptcha verifiers
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (error) {
+        console.error("Error clearing recaptcha:", error);
       }
-    });
+    }
+
+    // Create a new container for recaptcha if needed
+    const recaptchaContainer = document.getElementById('recaptcha-container');
+    if (!recaptchaContainer) {
+      console.error("Recaptcha container not found in DOM");
+      return;
+    }
+
+    try {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+          console.log("reCAPTCHA verified successfully");
+        },
+        'expired-callback': () => {
+          // Response expired. Ask user to solve reCAPTCHA again.
+          console.log("reCAPTCHA expired");
+          setError("reCAPTCHA expired. Please try again.");
+          
+          // Reset reCAPTCHA
+          if (window.recaptchaVerifier) {
+            window.recaptchaVerifier.clear();
+          }
+          
+          setupRecaptcha();
+        }
+      });
+    } catch (error) {
+      console.error("Error setting up reCAPTCHA:", error);
+      setError(`reCAPTCHA setup failed: ${error.message}`);
+    }
+
+    // Cleanup function
+    return () => {
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (error) {
+          console.error("Error clearing recaptcha on unmount:", error);
+        }
+      }
+    };
   }, []);
+
+  const setupRecaptcha = () => {
+    try {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          // reCAPTCHA solved
+          console.log("reCAPTCHA re-verified successfully");
+        }
+      });
+    } catch (error) {
+      console.error("Error re-setting up reCAPTCHA:", error);
+      setError(`reCAPTCHA re-setup failed: ${error.message}`);
+    }
+  };
 
   const handleSendVerificationCode = async () => {
     try {
@@ -31,6 +92,11 @@ function Signup({ setIsAuthenticated }) {
         formattedPhone = `+91${phoneNumber}`;
       }
       
+      // Ensure recaptcha verifier is ready
+      if (!window.recaptchaVerifier) {
+        setupRecaptcha();
+      }
+      
       // Use the existing recaptchaVerifier instance
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
       setConfirmationResult(confirmation);
@@ -39,16 +105,18 @@ function Signup({ setIsAuthenticated }) {
     } catch (error) {
       console.error("Error sending verification code:", error);
       setError(`Failed to send verification code: ${error.message}`);
+      
       // Reset reCAPTCHA on error
       if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible',
-          callback: () => {
-            // reCAPTCHA solved
-          }
-        });
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (clearError) {
+          console.error("Error clearing recaptcha:", clearError);
+        }
       }
+      
+      // Set up reCAPTCHA again
+      setupRecaptcha();
     } finally {
       setIsLoading(false);
     }
@@ -93,77 +161,95 @@ function Signup({ setIsAuthenticated }) {
   };
 
   return (
-    <div className="auth-container">
-      <div className="hero-image">
-        <img src="/logo512.png" alt="My Fasting Friends Logo" />
-      </div>
-      <h2>Welcome to My Fasting Friends</h2>
-      <div id="recaptcha-container"></div>
-      <p>Join our community of fasting enthusiasts and track your progress with friends.</p>
-      
-      {error && <div className="error-message">{error}</div>}
-      
-      {!showVerification ? (
-        <div className="phone-input-container">
-          <label htmlFor="phoneNumber">Enter your mobile number:</label>
-          <div className="input-group">
-            <span className="country-code">+91</span>
-            <input
-              type="tel"
-              id="phoneNumber"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-              placeholder="10-digit mobile number"
-              maxLength={10}
-            />
-          </div>
-          <button 
-            onClick={handleSendVerificationCode}
-            disabled={isLoading || !phoneNumber || phoneNumber.length < 10}
-            className="primary-button"
-          >
-            {isLoading ? 'Sending...' : 'Get OTP'}
-          </button>
-          
-          {/* Test login button - for development only */}
-          <button 
-            onClick={handleTestLogin}
-            className="secondary-button"
-            style={{marginTop: '10px'}}
-          >
-            Test Login (Skip OTP)
-          </button>
-        </div>
-      ) : (
-        <div className="verification-container">
-          <p>We've sent a verification code to <strong>+91 {phoneNumber}</strong></p>
-          <label htmlFor="verificationCode">Enter OTP:</label>
-          <input
-            type="text"
-            id="verificationCode"
-            value={verificationCode}
-            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-            placeholder="6-digit code"
-            maxLength={6}
+    <div className="App">
+      <header className="App-header">
+        <div className="header-left">
+          <img 
+            src={`${process.env.PUBLIC_URL}/logo192.png`} 
+            alt="My Fasting Friends Logo" 
+            className="app-logo" 
           />
-          <div className="button-group">
+          <h1>My Fasting Friends</h1>
+        </div>
+      </header>
+      
+      <div className="auth-container">
+        <div className="hero-image">
+          <img 
+            src={`${process.env.PUBLIC_URL}/logo512.png`} 
+            alt="My Fasting Friends Logo" 
+            className="hero-logo" 
+          />
+        </div>
+        <h2>Welcome to My Fasting Friends</h2>
+        {/* Create a dedicated container for reCAPTCHA */}
+        <div id="recaptcha-container" style={{ margin: '10px 0' }}></div>
+        <p>Join our community of fasting enthusiasts and track your progress with friends.</p>
+        
+        {error && <div className="error-message">{error}</div>}
+        
+        {!showVerification ? (
+          <div className="phone-input-container">
+            <label htmlFor="phoneNumber">Enter your mobile number:</label>
+            <div className="input-group">
+              <span className="country-code">+91</span>
+              <input
+                type="tel"
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                placeholder="10-digit mobile number"
+                maxLength={10}
+              />
+            </div>
             <button 
-              onClick={handleVerifyCode}
-              disabled={isLoading || !verificationCode || verificationCode.length < 6}
+              onClick={handleSendVerificationCode}
+              disabled={isLoading || !phoneNumber || phoneNumber.length < 10}
               className="primary-button"
             >
-              {isLoading ? 'Verifying...' : 'Verify & Continue'}
+              {isLoading ? 'Sending...' : 'Get OTP'}
             </button>
+            
+            {/* Test login button - for development only */}
             <button 
-              onClick={() => setShowVerification(false)}
-              disabled={isLoading}
+              onClick={handleTestLogin}
               className="secondary-button"
+              style={{marginTop: '10px'}}
             >
-              Back
+              Test Login (Skip OTP)
             </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="verification-container">
+            <p>We've sent a verification code to <strong>+91 {phoneNumber}</strong></p>
+            <label htmlFor="verificationCode">Enter OTP:</label>
+            <input
+              type="text"
+              id="verificationCode"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="6-digit code"
+              maxLength={6}
+            />
+            <div className="button-group">
+              <button 
+                onClick={handleVerifyCode}
+                disabled={isLoading || !verificationCode || verificationCode.length < 6}
+                className="primary-button"
+              >
+                {isLoading ? 'Verifying...' : 'Verify & Continue'}
+              </button>
+              <button 
+                onClick={() => setShowVerification(false)}
+                disabled={isLoading}
+                className="secondary-button"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -49,21 +49,33 @@
 /* Auth container styles */
 .auth-container {
   max-width: 400px;
-  margin: 2rem auto;
+  margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .hero-image {
-  margin: 2rem auto;
+  margin: 1rem auto 0.5rem;
   text-align: center;
+  width: 100%;
+  max-width: 150px;
 }
 
 .hero-image img {
+  width: 100%;
   max-width: 150px;
   height: auto;
-  margin: 0 auto;
   display: block;
+  margin: 0 auto;
+}
+
+.hero-logo {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
 }
 
 /* Input group styles */
@@ -167,4 +179,25 @@ main {
   border: 1px solid #dc3545;
   border-radius: 4px;
   background-color: #fff;
+}
+
+.phone-input-container {
+  width: 100%;
+}
+
+.verification-container {
+  width: 100%;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  text-align: left;
+  font-weight: 500;
 }

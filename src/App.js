@@ -50,7 +50,11 @@ function App() {
     <div className="App">
       <header className="App-header">
         <div className="header-left">
-          <img src="/logo192.png" alt="My Fasting Friends Logo" className="app-logo" />
+          <img 
+            src={`${process.env.PUBLIC_URL}/logo192.png`} 
+            alt="My Fasting Friends Logo" 
+            className="app-logo" 
+          />
           <h1>My Fasting Friends</h1>
         </div>
         <button onClick={handleLogout} className="logout-button">Logout</button>
