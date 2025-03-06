@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth, RecaptchaVerifier } from '../../firebase';
 import { signInWithPhoneNumber } from "firebase/auth";
 import { createUserProfile } from '../../services/firestoreService';
@@ -11,6 +11,16 @@ function Signup({ setIsAuthenticated }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    // Initialize reCAPTCHA when component mounts
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => {
+        // reCAPTCHA solved
+      }
+    });
+  }, []);
+
   const handleSendVerificationCode = async () => {
     try {
       setIsLoading(true);
@@ -21,20 +31,24 @@ function Signup({ setIsAuthenticated }) {
         formattedPhone = `+91${phoneNumber}`;
       }
       
-      const recaptchaVerifier = new RecaptchaVerifier(auth, 'sign-in-button', {
-        'size': 'invisible',
-        'callback': () => {
-          // reCAPTCHA solved
-        }
-      });
-      
-      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
+      // Use the existing recaptchaVerifier instance
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
       setConfirmationResult(confirmation);
       setShowVerification(true);
       alert("Verification code sent! Please check your phone.");
     } catch (error) {
       console.error("Error sending verification code:", error);
       setError(`Failed to send verification code: ${error.message}`);
+      // Reset reCAPTCHA on error
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {
+            // reCAPTCHA solved
+          }
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +98,7 @@ function Signup({ setIsAuthenticated }) {
         <img src="/logo512.png" alt="My Fasting Friends Logo" />
       </div>
       <h2>Welcome to My Fasting Friends</h2>
-      <div id="sign-in-button"></div>
+      <div id="recaptcha-container"></div>
       <p>Join our community of fasting enthusiasts and track your progress with friends.</p>
       
       {error && <div className="error-message">{error}</div>}
