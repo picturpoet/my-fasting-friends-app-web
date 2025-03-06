@@ -1,5 +1,8 @@
 .App {
   text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .App-header {
@@ -9,6 +12,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-left {
@@ -19,6 +24,7 @@
 
 .app-logo {
   height: 40px;
+  width: auto;
   pointer-events: none;
 }
 
@@ -49,12 +55,15 @@
 }
 
 .hero-image {
-  margin-bottom: 2rem;
+  margin: 2rem auto;
+  text-align: center;
 }
 
 .hero-image img {
-  max-width: 200px;
+  max-width: 150px;
   height: auto;
+  margin: 0 auto;
+  display: block;
 }
 
 /* Input group styles */
@@ -75,6 +84,8 @@
   color: #666;
   white-space: nowrap;
   font-size: 1rem;
+  min-width: 60px;
+  text-align: center;
 }
 
 .input-group input {
@@ -140,4 +151,20 @@
 .bottom-nav button.active {
   color: #282c34;
   font-weight: bold;
+}
+
+main {
+  flex: 1;
+  padding: 1rem;
+  padding-bottom: 70px; /* Space for bottom nav */
+}
+
+/* Error message styling */
+.error-message {
+  color: #dc3545;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  background-color: #fff;
 }

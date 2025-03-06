@@ -11,15 +11,6 @@ function Signup({ setIsAuthenticated }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // For testing only - bypass phone auth
-  const handleTestLogin = () => {
-    localStorage.setItem('user', JSON.stringify({
-      uid: 'test-user-id',
-      phoneNumber: '+91' + phoneNumber
-    }));
-    setIsAuthenticated(true);
-  };
-
   const handleSendVerificationCode = async () => {
     try {
       setIsLoading(true);
@@ -27,10 +18,9 @@ function Signup({ setIsAuthenticated }) {
       
       let formattedPhone = phoneNumber;
       if (!phoneNumber.startsWith('+')) {
-        formattedPhone = `+91${phoneNumber}`; // Assuming India country code
+        formattedPhone = `+91${phoneNumber}`;
       }
       
-      // Initialize reCAPTCHA verifier
       const recaptchaVerifier = new RecaptchaVerifier(auth, 'sign-in-button', {
         'size': 'invisible',
         'callback': () => {
@@ -38,7 +28,6 @@ function Signup({ setIsAuthenticated }) {
         }
       });
       
-      // Send verification code
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
       setConfirmationResult(confirmation);
       setShowVerification(true);
@@ -78,6 +67,15 @@ function Signup({ setIsAuthenticated }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // For testing only - bypass phone auth
+  const handleTestLogin = () => {
+    localStorage.setItem('user', JSON.stringify({
+      uid: 'test-user-id',
+      phoneNumber: '+91' + phoneNumber
+    }));
+    setIsAuthenticated(true);
   };
 
   return (
