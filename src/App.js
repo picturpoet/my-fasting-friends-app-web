@@ -4,7 +4,7 @@ import FriendsTab from './components/FriendsTab';
 import MeTab from './components/MeTab';
 import Auth from './components/Auth/Signup';
 import { auth } from './firebase';
-import logo from './logo512.png'; // Import the logo
+import logo from './logo512.png';
 import './App.css';
 
 function App() {
@@ -12,14 +12,12 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is already logged in
   useEffect(() => {
     const checkAuthState = () => {
       auth.onAuthStateChanged((user) => {
         if (user) {
           setIsAuthenticated(true);
         } else {
-          // Check localStorage as fallback
           const storedUser = localStorage.getItem('user');
           if (storedUser) {
             setIsAuthenticated(true);
@@ -52,8 +50,10 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-       <img src={logo} alt="My Fasting Friends Logo" className="app-logo" />
-        <h1>My Fasting Friends</h1>
+        <div className="header-left">
+          <img src={logo} alt="My Fasting Friends Logo" className="app-logo" />
+          <h1>My Fasting Friends</h1>
+        </div>
         <button onClick={handleLogout} className="logout-button">Logout</button>
       </header>
       <main>
