@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import '../styles/colors.css';
+import '../styles/components.css';
 
 function FriendsTab() {
   // For simplicity, we're focusing only on WhatsApp invites now
   const [isLoading, setIsLoading] = useState(false);
+  
   
   const handleInviteViaWhatsApp = () => {
     // Create invitation message

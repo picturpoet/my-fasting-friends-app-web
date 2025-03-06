@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { auth, RecaptchaVerifier } from '../../firebase';
-import { signInWithPhoneNumber } from "firebase/auth";
+import { auth } from '../../firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { createUserProfile } from '../../services/firestoreService';
 import '../../App.css';
+import '../../styles/colors.css';
+import '../../styles/components.css';
 
 function Signup({ setIsAuthenticated }) {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -23,38 +25,31 @@ function Signup({ setIsAuthenticated }) {
       }
     }
 
-    // Create a new container for recaptcha if needed
-    const recaptchaContainer = document.getElementById('recaptcha-container');
-    if (!recaptchaContainer) {
-      console.error("Recaptcha container not found in DOM");
-      return;
-    }
-
-    try {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-          console.log("reCAPTCHA verified successfully");
-        },
-        'expired-callback': () => {
-          // Response expired. Ask user to solve reCAPTCHA again.
-          console.log("reCAPTCHA expired");
-          setError("reCAPTCHA expired. Please try again.");
-          
-          // Reset reCAPTCHA
-          if (window.recaptchaVerifier) {
-            window.recaptchaVerifier.clear();
+    const setupRecaptcha = () => {
+      try {
+        // Create a div element for the recaptcha
+        const recaptchaContainer = document.getElementById('recaptcha-container');
+        
+        // Create a new reCAPTCHA verifier
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainer, {
+          size: 'invisible',
+          callback: () => {
+            console.log("reCAPTCHA verified successfully");
+          },
+          'expired-callback': () => {
+            console.log("reCAPTCHA expired");
+            setError("reCAPTCHA expired. Please try again.");
           }
-          
-          setupRecaptcha();
-        }
-      });
-    } catch (error) {
-      console.error("Error setting up reCAPTCHA:", error);
-      setError(`reCAPTCHA setup failed: ${error.message}`);
-    }
+        });
+      } catch (error) {
+        console.error("Error setting up reCAPTCHA:", error);
+        setError(`reCAPTCHA setup failed: ${error.message}`);
+      }
+    };
 
+    // Set a short timeout to ensure DOM is ready
+    setTimeout(setupRecaptcha, 1000);
+    
     // Cleanup function
     return () => {
       if (window.recaptchaVerifier) {
@@ -69,10 +64,13 @@ function Signup({ setIsAuthenticated }) {
 
   const setupRecaptcha = () => {
     try {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      // Create a div element for the recaptcha
+      const recaptchaContainer = document.getElementById('recaptcha-container');
+      
+      // Create a new reCAPTCHA verifier
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainer, {
         size: 'invisible',
         callback: () => {
-          // reCAPTCHA solved
           console.log("reCAPTCHA re-verified successfully");
         }
       });
@@ -95,6 +93,8 @@ function Signup({ setIsAuthenticated }) {
       // Ensure recaptcha verifier is ready
       if (!window.recaptchaVerifier) {
         setupRecaptcha();
+        // Give it a moment to initialize
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
       // Use the existing recaptchaVerifier instance
@@ -110,13 +110,14 @@ function Signup({ setIsAuthenticated }) {
       if (window.recaptchaVerifier) {
         try {
           window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = null;
         } catch (clearError) {
           console.error("Error clearing recaptcha:", clearError);
         }
       }
       
-      // Set up reCAPTCHA again
-      setupRecaptcha();
+      // Set up reCAPTCHA again after a brief pause
+      setTimeout(setupRecaptcha, 1000);
     } finally {
       setIsLoading(false);
     }
@@ -182,8 +183,10 @@ function Signup({ setIsAuthenticated }) {
           />
         </div>
         <h2>Welcome to My Fasting Friends</h2>
-        {/* Create a dedicated container for reCAPTCHA */}
-        <div id="recaptcha-container" style={{ margin: '10px 0' }}></div>
+        
+        {/* Create a dedicated container for reCAPTCHA - invisible but needs to be in the DOM */}
+        <div id="recaptcha-container"></div>
+        
         <p>Join our community of fasting enthusiasts and track your progress with friends.</p>
         
         {error && <div className="error-message">{error}</div>}

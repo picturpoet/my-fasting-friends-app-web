@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { auth } from '../firebase';
 import { getUserProfile, updateUserProfile } from '../services/firestoreService';
+import '../styles/colors.css';
+import '../styles/components.css';
 
 function MeTab() {
   const [userProfile, setUserProfile] = useState(null);
@@ -58,11 +60,15 @@ function MeTab() {
       {message && <div className="message">{message}</div>}
       
       <div className="profile-section">
-        <div className="profile-picture">
-          {/* Placeholder for profile picture */}
-          <div className="avatar-placeholder">
-            {displayName ? displayName[0].toUpperCase() : '?'}
-          </div>
+        <div className="avatar">
+          {displayName ? (
+            displayName[0].toUpperCase()
+          ) : (
+            <img 
+              src={`${process.env.PUBLIC_URL}/logo192.png`} 
+              alt="Profile" 
+            />
+          )}
         </div>
         
         <div className="profile-details">

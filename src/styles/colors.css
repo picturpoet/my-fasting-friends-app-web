@@ -1,0 +1,21 @@
+:root {
+  /* Primary Colors */
+  --primary-color: #0cc0df;
+  --primary-color-dark: #0097b2;
+  
+  /* Secondary Colors */
+  --secondary-color: #282c34;
+  --secondary-color-light: #4a4f5a;
+  
+  /* Neutral Colors */
+  --white: #ffffff;
+  --light-gray: #f0f0f0;
+  --medium-gray: #dddddd;
+  --dark-gray: #666666;
+  
+  /* Feedback Colors */
+  --success-color: #28a745;
+  --error-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
+}

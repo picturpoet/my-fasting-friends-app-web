@@ -5,6 +5,8 @@ import MeTab from './components/MeTab';
 import Auth from './components/Auth/Signup';
 import { auth } from './firebase';
 import './App.css';
+import './styles/colors.css';
+import './styles/components.css';
 
 function App() {
   const [activeTab, setActiveTab] = useState('fast');

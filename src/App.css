@@ -6,7 +6,7 @@
 }
 
 .App-header {
-  background-color: #282c34;
+  background-color: var(--primary-color-dark);
   padding: 1rem;
   color: white;
   display: flex;
@@ -82,7 +82,7 @@
 .input-group {
   display: flex;
   align-items: center;
-  border: 1px solid #ddd;
+  border: 1px solid var(--medium-gray);
   border-radius: 4px;
   overflow: hidden;
   width: 100%;
@@ -90,10 +90,10 @@
 }
 
 .country-code {
-  background-color: #f0f0f0;
+  background-color: var(--light-gray);
   padding: 0.8rem;
-  border-right: 1px solid #ddd;
-  color: #666;
+  border-right: 1px solid var(--medium-gray);
+  color: var(--dark-gray);
   white-space: nowrap;
   font-size: 1rem;
   min-width: 60px;
@@ -110,32 +110,40 @@
 
 /* Button styles */
 .primary-button {
-  background-color: #282c34;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   padding: 0.8rem 2rem;
   border-radius: 4px;
   cursor: pointer;
-  width: 100%;
   font-size: 1rem;
-  margin: 0.5rem 0;
+  margin: 0.5rem auto;
+  display: block;
+  max-width: 300px;
+  width: 100%;
 }
 
 .primary-button:disabled {
-  background-color: #ccc;
+  background-color: var(--medium-gray);
   cursor: not-allowed;
 }
 
 .secondary-button {
   background-color: transparent;
-  border: 1px solid #282c34;
-  color: #282c34;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
   padding: 0.8rem 2rem;
   border-radius: 4px;
   cursor: pointer;
-  width: 100%;
   font-size: 1rem;
-  margin: 0.5rem 0;
+  margin: 0.5rem auto;
+  display: block;
+  max-width: 300px;
+  width: 100%;
+}
+
+.secondary-button:hover {
+  background-color: rgba(12, 192, 223, 0.1);
 }
 
 /* Navigation styles */
@@ -144,7 +152,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: white;
+  background-color: var(--white);
   display: flex;
   justify-content: space-around;
   padding: 1rem;
@@ -157,11 +165,11 @@
   padding: 0.5rem 1rem;
   cursor: pointer;
   font-size: 1rem;
-  color: #666;
+  color: var(--dark-gray);
 }
 
 .bottom-nav button.active {
-  color: #282c34;
+  color: var(--primary-color);
   font-weight: bold;
 }
 
@@ -173,26 +181,29 @@ main {
 
 /* Error message styling */
 .error-message {
-  color: #dc3545;
+  color: var(--error-color);
   margin: 1rem 0;
   padding: 0.5rem;
-  border: 1px solid #dc3545;
+  border: 1px solid var(--error-color);
   border-radius: 4px;
-  background-color: #fff;
+  background-color: var(--white);
 }
 
 .phone-input-container {
   width: 100%;
+  max-width: 300px;
 }
 
 .verification-container {
   width: 100%;
+  max-width: 300px;
 }
 
 .button-group {
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 300px;
 }
 
 label {
@@ -200,4 +211,162 @@ label {
   margin-bottom: 0.5rem;
   text-align: left;
   font-weight: 500;
+}
+
+/* Feature card styles for FriendsTab */
+.feature-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.feature-card {
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: transform 0.3s ease;
+  text-align: left;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.feature-card h4 {
+  color: var(--primary-color-dark);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.feature-card p {
+  color: var(--dark-gray);
+  margin: 0;
+}
+
+/* Profile styles */
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--primary-color-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.profile-details {
+  flex: 1;
+}
+
+.profile-details h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--secondary-color);
+}
+
+.phone-number {
+  color: var(--dark-gray);
+  margin-bottom: 1rem;
+}
+
+/* Stats section */
+.stats-section {
+  margin-bottom: 2rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.stat-box {
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--dark-gray);
+  margin-top: 0.5rem;
+}
+
+/* App info section */
+.app-info {
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.app-info h3 {
+  margin-top: 0;
+  color: var(--secondary-color);
+}
+
+.app-info p {
+  color: var(--dark-gray);
+  margin: 0.5rem 0;
+}
+
+/* WhatsApp button */
+.whatsapp-button {
+  background-color: #25D366;
+}
+
+.whatsapp-button:hover {
+  background-color: #128C7E;
+}
+
+/* Invite section */
+.invite-section {
+  margin-bottom: 2rem;
+}
+
+.invite-card {
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: l 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  gap: 1rem;
+  text-align: left;
+}
+
+.invite-icon {
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.invite-content {
+  flex: 1;
 }
