@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from "firebase/auth";
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -17,11 +17,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// For testing purposes only - allows testing phone auth in emulators
-if (process.env.NODE_ENV === 'development') {
-  auth.settings = { appVerificationDisabledForTesting: true };
-}
-
+// Initialize Firestore
 const db = getFirestore(app);
+
+// Check for development mode and enable emulators
+if (process.env.NODE_ENV === 'development') {
+  // Use emulators for auth and firestore
+  connectAuthEmulator(auth, "http://localhost:9099"); // Specify the Auth Emulator URL
+  connectFirestoreEmulator(db, "localhost", 8080); // Specify the Firestore Emulator URL
+  auth.settings.appVerificationDisabledForTesting = true;
+  console.log("Emulators connected and app verification disabled for testing");
+}
 
 export { auth, db };

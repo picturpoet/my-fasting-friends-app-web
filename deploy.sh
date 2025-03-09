@@ -29,7 +29,8 @@ if [ ! -f "build/index.html" ]; then
   exit 1
 fi
 
-if [ ! -f "build/static/js/main.*.js" ]; then
+# Check if main js file exists using wildcard pattern match
+if ! ls build/static/js/main*.js >/dev/null 2>&1; then
   echo "Error: Main JavaScript file not found. Build process failed."
   exit 1
 fi

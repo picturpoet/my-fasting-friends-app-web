@@ -368,7 +368,17 @@ label {
 }
 
 #recaptcha-container {
+  position: relative;
+  margin: 10px auto;
+  width: 304px; /* Default width of recaptcha */
+  height: 78px; /* Default height of recaptcha */
+  overflow: hidden;
+  opacity: 0.9; /* slightly transparent but still functional */
+}
+
+#recaptcha-verifier {
+  position: fixed;
+  bottom: 0;
+  left: 0;
   opacity: 0.01;
-  height: 0;
-  position: absolute;
 }

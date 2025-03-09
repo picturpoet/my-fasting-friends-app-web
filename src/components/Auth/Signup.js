@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { auth } from '../../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { createUserProfile } from '../../services/firestoreService';
@@ -13,80 +13,83 @@ function Signup({ setIsAuthenticated }) {
   const [showVerification, setShowVerification] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const recaptchaVerifier = useRef(null);
+  const recaptchaContainer = useRef(null);
+  const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
 
-  // Set up reCAPTCHA verifier when component mounts
+  // Initialize reCAPTCHA only once when the container is ready
   useEffect(() => {
-    // Clean up any existing recaptcha verifiers
-    if (window.recaptchaVerifier) {
+    if (!recaptchaVerifier.current) {
       try {
-        window.recaptchaVerifier.clear();
+        // Create the RecaptchaVerifier with the container ID, not the ref
+        recaptchaVerifier.current = new RecaptchaVerifier(
+          'recaptcha-container',
+          {
+            size: 'invisible',
+            callback: () => {
+              // reCAPTCHA solved, allow signInWithPhoneNumber.
+              setIsRecaptchaReady(true);
+            },
+            'expired-callback': () => {
+              // Response expired. Ask user to solve reCAPTCHA again.
+              setIsRecaptchaReady(false);
+              setError('reCAPTCHA expired. Please try again.');
+            }
+          },
+          auth
+        );
+        
+        // Render the reCAPTCHA
+        recaptchaVerifier.current.render().then(() => {
+          setIsRecaptchaReady(true);
+        });
       } catch (error) {
-        console.error("Error clearing recaptcha:", error);
+        console.error('Error creating RecaptchaVerifier:', error);
+        setError('Failed to initialize reCAPTCHA: ' + error.message);
       }
     }
 
-    // Create a new reCAPTCHA verifier
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible'
-    });
-
-    // Cleanup function
     return () => {
-      if (window.recaptchaVerifier) {
+      if (recaptchaVerifier.current) {
         try {
-          window.recaptchaVerifier.clear();
-        } catch (error) {
-          console.error("Error clearing recaptcha on unmount:", error);
+          recaptchaVerifier.current.clear();
+        } catch (e) {
+          console.error('Error clearing reCAPTCHA:', e);
         }
+        recaptchaVerifier.current = null;
       }
     };
   }, []);
-
-  const setupRecaptcha = () => {
-    try {
-      // Clear any existing verifier
-      if (window.recaptchaVerifier) {
-        try {
-          window.recaptchaVerifier.clear();
-        } catch (error) {
-          console.error("Error clearing existing reCAPTCHA:", error);
-        }
-      }
-      
-      // Create a new reCAPTCHA verifier
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible'
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Error setting up reCAPTCHA:", error);
-      setError(`reCAPTCHA setup failed: ${error.message}`);
-      return false;
-    }
-  };
 
   const handleSendVerificationCode = async () => {
     try {
       setIsLoading(true);
       setError('');
-      
+
+      if (!isRecaptchaReady) {
+        throw new Error('reCAPTCHA is not ready.');
+      }
+
       let formattedPhone = phoneNumber;
       if (!phoneNumber.startsWith('+')) {
         formattedPhone = `+91${phoneNumber}`;
       }
-      
-      // Use the recaptchaVerifier instance
-      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
+
+      // Ensure recaptchaVerifier.current is valid before using it
+      if (!recaptchaVerifier.current) {
+        throw new Error('reCAPTCHA not initialized properly.');
+      }
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        formattedPhone,
+        recaptchaVerifier.current
+      );
       setConfirmationResult(confirmation);
       setShowVerification(true);
       alert("Verification code sent! Please check your phone.");
     } catch (error) {
       console.error("Error sending verification code:", error);
       setError(`Failed to send verification code: ${error.message}`);
-      
-      // Reset reCAPTCHA on error
-      setupRecaptcha();
     } finally {
       setIsLoading(false);
     }
@@ -97,21 +100,21 @@ function Signup({ setIsAuthenticated }) {
       setError("Please request a verification code first");
       return;
     }
-    
+
     try {
       setIsLoading(true);
       setError('');
-      
+
       const result = await confirmationResult.confirm(verificationCode);
       const user = result.user;
-      
+
       await createUserProfile(user.uid, user.phoneNumber);
-      
+
       localStorage.setItem('user', JSON.stringify({
         uid: user.uid,
         phoneNumber: user.phoneNumber
       }));
-      
+
       setIsAuthenticated(true);
     } catch (error) {
       console.error("Error verifying code:", error);
@@ -134,32 +137,29 @@ function Signup({ setIsAuthenticated }) {
     <div className="App">
       <header className="App-header">
         <div className="header-left">
-          <img 
-            src={`${process.env.PUBLIC_URL}/logo192.png`} 
-            alt="My Fasting Friends Logo" 
-            className="app-logo" 
+          <img
+            src={`${process.env.PUBLIC_URL}/logo192.png`}
+            alt="My Fasting Friends Logo"
+            className="app-logo"
           />
           <h1>My Fasting Friends</h1>
         </div>
       </header>
-      
+
       <div className="auth-container">
         <div className="hero-image">
-          <img 
-            src={`${process.env.PUBLIC_URL}/logo512.png`} 
-            alt="My Fasting Friends Logo" 
-            className="hero-logo" 
+          <img
+            src={`${process.env.PUBLIC_URL}/logo512.png`}
+            alt="My Fasting Friends Logo"
+            className="hero-logo"
           />
         </div>
         <h2>Welcome to My Fasting Friends</h2>
-        
-        {/* Create a dedicated container for reCAPTCHA */}
-        <div id="recaptcha-container"></div>
-        
+
         <p>Join our community of fasting enthusiasts and track your progress with friends.</p>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         {!showVerification ? (
           <div className="phone-input-container">
             <label htmlFor="phoneNumber">Enter your mobile number:</label>
@@ -174,19 +174,19 @@ function Signup({ setIsAuthenticated }) {
                 maxLength={10}
               />
             </div>
-            <button 
+            <button
               onClick={handleSendVerificationCode}
-              disabled={isLoading || !phoneNumber || phoneNumber.length < 10}
+              disabled={isLoading || !phoneNumber || phoneNumber.length < 10 || !isRecaptchaReady}
               className="primary-button"
             >
               {isLoading ? 'Sending...' : 'Get OTP'}
             </button>
-            
+
             {/* Test login button - for development only */}
-            <button 
+            <button
               onClick={handleTestLogin}
               className="secondary-button"
-              style={{marginTop: '10px'}}
+              style={{ marginTop: '10px' }}
             >
               Test Login (Skip OTP)
             </button>
@@ -204,14 +204,14 @@ function Signup({ setIsAuthenticated }) {
               maxLength={6}
             />
             <div className="button-group">
-              <button 
+              <button
                 onClick={handleVerifyCode}
                 disabled={isLoading || !verificationCode || verificationCode.length < 6}
                 className="primary-button"
               >
                 {isLoading ? 'Verifying...' : 'Verify & Continue'}
               </button>
-              <button 
+              <button
                 onClick={() => setShowVerification(false)}
                 disabled={isLoading}
                 className="secondary-button"
@@ -221,6 +221,8 @@ function Signup({ setIsAuthenticated }) {
             </div>
           </div>
         )}
+        {/* This div will hold the invisible reCAPTCHA widget - don't hide it with display:none */}
+        <div id="recaptcha-container" ref={recaptchaContainer}></div>
       </div>
     </div>
   );
