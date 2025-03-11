@@ -402,10 +402,20 @@ export const joinChallenge = async (challengeId, userId) => {
       // All challenges are public and available to join by anyone with the invite code
       // Add user to participants array
       console.log(`Updating challenge ${challengeId} to add user ${userId} to participants`);
-      await updateDoc(challengeRef, {
+      console.log(`Debug: Attempting to update challenge with following data:`, {
         participants: [...currentParticipants, userId]
       });
-      console.log(`Successfully updated challenge participants`);
+      
+      try {
+        await updateDoc(challengeRef, {
+          participants: [...currentParticipants, userId]
+        });
+        console.log(`Successfully updated challenge participants`);
+      } catch (innerError) {
+        console.error(`Permission error updating challenge participants: ${innerError.message}`, innerError);
+        console.error(`Firebase error code:`, innerError.code);
+        throw innerError;
+      }
     } catch (error) {
       console.error(`Error updating challenge participants: ${error.message}`);
       throw new Error(`Failed to update challenge participants: ${error.message}`);
@@ -414,16 +424,22 @@ export const joinChallenge = async (challengeId, userId) => {
     try {
       // Create participant record
       console.log(`Creating challenge participant record for user ${userId} in challenge ${challengeId}`);
-      await addDoc(collection(db, 'challengeParticipants'), {
-        challengeId,
-        userId,
-        joinedAt: Timestamp.now(),
-        dailyScores: [],
-        totalScore: 0,
-        rank: currentParticipants.length + 1,
-        completedDays: 0
-      });
-      console.log(`Successfully created challenge participant record`);
+      try {
+        await addDoc(collection(db, 'challengeParticipants'), {
+          challengeId,
+          userId,
+          joinedAt: Timestamp.now(),
+          dailyScores: [],
+          totalScore: 0,
+          rank: currentParticipants.length + 1,
+          completedDays: 0
+        });
+        console.log(`Successfully created challenge participant record`);
+      } catch (innerError) {
+        console.error(`Permission error creating participant record: ${innerError.message}`, innerError);
+        console.error(`Firebase error code:`, innerError.code);
+        throw innerError;
+      }
     } catch (error) {
       console.error(`Error creating participant record: ${error.message}`);
       // If this fails, try to remove the user from participants

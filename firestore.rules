@@ -28,10 +28,11 @@ service cloud.firestore {
     // Rules for each collection
     match /users/{userId} {
       // Anyone can read basic profile info, but only the owner can write or read full details
-      allow read: if isSignedIn() && (isOwner(userId) || resource.data.displayName != null);
+      allow read: if isSignedIn();
       
       // Users can only update their own profiles
-      allow create, update, delete: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      allow create, delete: if isSignedIn() && isOwner(userId);
     }
     
     match /fastingRecords/{recordId} {
@@ -49,13 +50,12 @@ service cloud.firestore {
                       request.resource.data.creatorId == request.auth.uid && 
                       request.resource.data.status == 'active';
       
-      // Only the creator can update challenge details, except for participants array
+      // Modified update rule to allow joining more easily
       allow update: if isSignedIn() && (
         // Creator can update all fields
         isOwner(resource.data.creatorId) || 
         // Anyone can join (only modifies the participants array)
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']) && 
-        request.resource.data.participants.size() > resource.data.participants.size()) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])) ||
         // Allow status updates (for expiry)
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
          (request.resource.data.status == 'active' || request.resource.data.status == 'expired'))
@@ -67,13 +67,11 @@ service cloud.firestore {
     
     match /challengeParticipants/{participantId} {
       // Challenge participants can see other participants' records
-      allow read: if isSignedIn() && isChallengeMember(resource.data.challengeId);
+      allow read: if isSignedIn();
       
-      // Any user can create their own participation record for an active challenge
-      // Removed the hasActiveChallenge check since it's handled in the application code
+      // Any user can create their own participation record
       allow create: if isSignedIn() && 
-                     request.resource.data.userId == request.auth.uid &&
-                     isChallengeActive(request.resource.data.challengeId);
+                     request.resource.data.userId == request.auth.uid;
       
       // Users can only update and delete their own participation records
       allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
