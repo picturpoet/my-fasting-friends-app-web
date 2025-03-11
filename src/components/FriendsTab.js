@@ -4,7 +4,9 @@ import { useUser } from '../contexts/UserContext';
 import '../styles/colors.css';
 import '../styles/components.css';
 import '../styles/friendsTab.css';
+import '../styles/challengeSharing.css';
 import { getGlobalLeaderboard, getChallengeParticipants, getChallengeFastingRecords } from '../services/firestoreService';
+import ChallengeSharing from './Challenge/ChallengeSharing';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -263,7 +265,7 @@ function FriendsTab() {
               <strong>Participants:</strong> {activeChallenge.participants.length}
             </p>
             
-            <div className="challenge-actions">
+          <div className="challenge-actions">
               <button 
                 className="primary-button"
                 onClick={handleInviteViaWhatsApp}
@@ -276,6 +278,9 @@ function FriendsTab() {
               </div>
             </div>
           </div>
+          
+          {/* Challenge Sharing Component */}
+          <ChallengeSharing challenge={activeChallenge} />
           
           {/* Challenge Progress Tracking - Milestone 6 implementation */}
           <div className="challenge-progress">

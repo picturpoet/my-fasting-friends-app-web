@@ -375,13 +375,18 @@ export const joinChallenge = async (challengeId, userId) => {
       throw new Error('This challenge has expired');
     }
     
-    if (challengeData.participants.includes(userId)) {
+    // Check if user is already a participant
+    if (challengeData.participants && challengeData.participants.includes(userId)) {
       return { success: true, message: 'Already a participant' };
     }
     
+    // Make sure participants is an array (defensive programming)
+    const currentParticipants = challengeData.participants || [];
+    
+    // All challenges are public and available to join by anyone with the invite code
     // Add user to participants array
     await updateDoc(challengeRef, {
-      participants: [...challengeData.participants, userId]
+      participants: [...currentParticipants, userId]
     });
     
     // Create participant record
@@ -391,7 +396,7 @@ export const joinChallenge = async (challengeId, userId) => {
       joinedAt: Timestamp.now(),
       dailyScores: [],
       totalScore: 0,
-      rank: challengeData.participants.length + 1,
+      rank: currentParticipants.length + 1,
       completedDays: 0
     });
     
@@ -647,9 +652,15 @@ export const getChallengeParticipants = async (challengeId) => {
 // Function to get challenge by invite code
 export const getChallengeByInviteCode = async (inviteCode) => {
   try {
+    if (!inviteCode || typeof inviteCode !== 'string' || inviteCode.length === 0) {
+      throw new Error('Invalid invite code format');
+    }
+    
+    const normalizedCode = inviteCode.toUpperCase().trim();
+    
     const q = query(
       collection(db, 'challenges'),
-      where('inviteCode', '==', inviteCode)
+      where('inviteCode', '==', normalizedCode)
     );
     
     const querySnapshot = await getDocs(q);
@@ -668,6 +679,33 @@ export const getChallengeByInviteCode = async (inviteCode) => {
   } catch (error) {
     console.error('Error getting challenge by invite code:', error);
     throw error;
+  }
+};
+
+// Function to share challenge via invite code
+export const generateChallengeSharingLink = (inviteCode, baseUrl = window.location.origin) => {
+  try {
+    if (!inviteCode) {
+      throw new Error('Invalid invite code');
+    }
+    
+    // Clean and normalize the invite code
+    const cleanCode = inviteCode.toUpperCase().trim();
+    
+    // Generate a URL for sharing
+    const sharingUrl = `${baseUrl}/join-challenge?code=${cleanCode}`;
+    
+    return {
+      success: true,
+      url: sharingUrl,
+      inviteCode: cleanCode
+    };
+  } catch (error) {
+    console.error('Error generating sharing link:', error);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 };
 

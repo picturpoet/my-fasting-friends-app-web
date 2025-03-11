@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import { joinChallenge, getChallengeByInviteCode } from '../../services/firestoreService';
 import '../../styles/colors.css';
@@ -8,10 +8,22 @@ import '../../styles/components.css';
 const JoinChallenge = () => {
   const { user, refreshActiveChallenge } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [inviteCode, setInviteCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [challenge, setChallenge] = useState(null);
+  
+  useEffect(() => {
+    // Check if we have an invite code in the URL query params
+    const queryParams = new URLSearchParams(location.search);
+    const codeFromUrl = queryParams.get('code');
+    
+    if (codeFromUrl) {
+      setInviteCode(codeFromUrl.toUpperCase().trim());
+    }
+  }, [location]);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,16 +38,21 @@ const JoinChallenge = () => {
       setError('');
       
       // Get the challenge by invite code
-      const challenge = await getChallengeByInviteCode(inviteCode.trim());
+      const challengeData = await getChallengeByInviteCode(inviteCode.trim());
+      setChallenge(challengeData);
       
       // Join the challenge
-      await joinChallenge(challenge.id, user.uid);
+      const result = await joinChallenge(challengeData.id, user.uid);
       
-      // Refresh active challenge data
-      await refreshActiveChallenge();
-      
-      // Navigate back to the friends tab
-      navigate('/friends');
+      if (result.success) {
+        // Refresh active challenge data
+        await refreshActiveChallenge();
+        
+        // Navigate back to the friends tab
+        navigate('/friends');
+      } else {
+        setError(result.message || 'Failed to join challenge');
+      }
       
     } catch (error) {
       console.error('Error joining challenge:', error);
@@ -62,12 +79,20 @@ const JoinChallenge = () => {
             type="text"
             id="inviteCode"
             value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+            onChange={(e) => setInviteCode(e.target.value.toUpperCase().trim())}
             placeholder="Enter 6-character code"
             maxLength={6}
             required
           />
         </div>
+        
+        {challenge && (
+          <div className="challenge-preview">
+            <h4>{challenge.name}</h4>
+            <p>{challenge.description}</p>
+            <p>Fasting type: {challenge.fastingType}</p>
+          </div>
+        )}
         
         <p className="join-info">
           You can only join one active challenge at a time. 
