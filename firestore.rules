@@ -45,11 +45,8 @@ service cloud.firestore {
       allow read: if isSignedIn() && (isOwner(userId) || resource.data.displayName != null);
       allow write: if isSignedIn() && isOwner(userId);
       
-      // Validate userState field
-      allow update: if isSignedIn() && isOwner(userId) && 
-                      (request.resource.data.userState == 'new' || 
-                       request.resource.data.userState == 'active' || 
-                       request.resource.data.userState == 'inactive');
+      // Validate userState field and allow updating activeChallenge
+      allow update: if isSignedIn() && isOwner(userId);
     }
     
     match /fastingRecords/{recordId} {
@@ -62,9 +59,13 @@ service cloud.firestore {
       allow read: if isSignedIn() && (resource.data.isPublic || isChallengeMember(challengeId));
       
       // Only the creator can update challenge details
-      allow update: if isSignedIn() && isOwner(resource.data.creatorId);
+      allow update: if isSignedIn() && (
+        isOwner(resource.data.creatorId) || 
+        // Allow participants to be updated (for joining challenges)
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])
+      );
       
-      // Anyone can create a challenge (removing the hasActiveChallenge check)
+      // Anyone can create a challenge
       allow create: if isSignedIn() && 
                       request.resource.data.creatorId == request.auth.uid && 
                       request.resource.data.status == 'active';
