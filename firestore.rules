@@ -43,10 +43,9 @@ service cloud.firestore {
     match /users/{userId} {
       // Anyone can read basic profile info, but only the owner can write or read full details
       allow read: if isSignedIn() && (isOwner(userId) || resource.data.displayName != null);
-      allow write: if isSignedIn() && isOwner(userId);
       
-      // Validate userState field and allow updating activeChallenge
-      allow update: if isSignedIn() && isOwner(userId);
+      // Users can only update their own profiles
+      allow create, update, delete: if isSignedIn() && isOwner(userId);
     }
     
     match /fastingRecords/{recordId} {
@@ -58,36 +57,37 @@ service cloud.firestore {
       // Public challenges can be read by anyone, private challenges only by participants
       allow read: if isSignedIn() && (resource.data.isPublic || isChallengeMember(challengeId));
       
-      // Only the creator can update challenge details
-      allow update: if isSignedIn() && (
-        isOwner(resource.data.creatorId) || 
-        // Allow participants to be updated (for joining challenges)
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])
-      );
-      
-      // Anyone can create a challenge
+      // Allow anyone to create a challenge
       allow create: if isSignedIn() && 
                       request.resource.data.creatorId == request.auth.uid && 
                       request.resource.data.status == 'active';
       
+      // Only the creator can update challenge details, except for participants array
+      allow update: if isSignedIn() && (
+        // Creator can update all fields
+        isOwner(resource.data.creatorId) || 
+        // Anyone can join with invite code (only adds to participants array)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']) &&
+         request.resource.data.participants.hasAll(resource.data.participants)) ||
+        // Allow status updates (for expiry)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+         (request.resource.data.status == 'active' || request.resource.data.status == 'expired'))
+      );
+      
       // Only the creator can delete a challenge
       allow delete: if isSignedIn() && isOwner(resource.data.creatorId);
-      
-      // Validate status field
-      allow update: if isSignedIn() && 
-                      (request.resource.data.status == 'active' || 
-                       request.resource.data.status == 'expired');
     }
     
     match /challengeParticipants/{participantId} {
       // Challenge participants can see other participants' records
       allow read: if isSignedIn() && isChallengeMember(resource.data.challengeId);
       
-      // Users can only write their own participation records
+      // Any user can create their own participation record for an active challenge
       allow create: if isSignedIn() && 
-                    isOwner(request.resource.data.userId) && 
-                    isChallengeActive(request.resource.data.challengeId);
+                     request.resource.data.userId == request.auth.uid &&
+                     isChallengeActive(request.resource.data.challengeId);
       
+      // Users can only update and delete their own participation records
       allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
     }
     
