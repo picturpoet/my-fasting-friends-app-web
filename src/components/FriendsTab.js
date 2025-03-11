@@ -25,23 +25,64 @@ function FriendsTab() {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      await refreshActiveChallenge();
       
-      // Load global leaderboard for new/inactive users
-      if (!activeChallenge) {
-        try {
-          const leaderboard = await getGlobalLeaderboard(10); // Top 10 users
-          setGlobalLeaderboard(leaderboard);
-        } catch (error) {
-          console.error("Error loading leaderboard:", error);
+      try {
+        // Only refresh the active challenge on initial load
+        if (activeChallenge === null) {
+          await refreshActiveChallenge();
         }
-      } else {
-        // Load challenge participants for active challenge
+        
+        // Load global leaderboard for new/inactive users
+        if (!activeChallenge) {
+          try {
+            const leaderboard = await getGlobalLeaderboard(10); // Top 10 users
+            setGlobalLeaderboard(leaderboard);
+          } catch (error) {
+            console.error("Error loading leaderboard:", error);
+          }
+        } else {
+          // Load challenge participants for active challenge
+          try {
+            const participants = await getChallengeParticipants(activeChallenge.id);
+            setChallengeParticipants(participants);
+            
+            // Load participant fasting records
+            const recordsPromises = participants.map(async (participant) => {
+              const records = await getChallengeFastingRecords(activeChallenge.id, participant.userId);
+              return { userId: participant.userId, records };
+            });
+            
+            const participantRecordsArray = await Promise.all(recordsPromises);
+            const recordsObject = {};
+            
+            participantRecordsArray.forEach(item => {
+              recordsObject[item.userId] = item.records;
+            });
+            
+            setParticipantRecords(recordsObject);
+          } catch (error) {
+            console.error("Error loading challenge participants:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error in loadData:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+    
+    // Use a timer instead of frequent re-renders
+    let refreshTimer = null;
+    if (activeChallenge) {
+      // Refresh participant data every 5 minutes instead of continuously
+      refreshTimer = setInterval(async () => {
         try {
           const participants = await getChallengeParticipants(activeChallenge.id);
           setChallengeParticipants(participants);
           
-          // Load participant fasting records
+          // Update participant records
           const recordsPromises = participants.map(async (participant) => {
             const records = await getChallengeFastingRecords(activeChallenge.id, participant.userId);
             return { userId: participant.userId, records };
@@ -56,15 +97,18 @@ function FriendsTab() {
           
           setParticipantRecords(recordsObject);
         } catch (error) {
-          console.error("Error loading challenge participants:", error);
+          console.error("Error refreshing participants:", error);
         }
-      }
-      
-      setIsLoading(false);
-    };
+      }, 300000); // 5 minutes
+    }
     
-    loadData();
-  }, [refreshActiveChallenge, activeChallenge]);
+    // Clean up
+    return () => {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+      }
+    };
+  }, [activeChallenge, refreshActiveChallenge]);
   
   
   
@@ -212,8 +256,12 @@ function FriendsTab() {
     if (!activeChallenge) return;
     
     // Create invitation message
+    const inviteCode = activeChallenge.inviteCode || '';
+    const baseUrl = window.location.origin;
+    const challengeLink = `${baseUrl}/join-challenge?code=${inviteCode}`;
+    
     const message = encodeURIComponent(
-      `Join my fasting challenge "${activeChallenge.name}" on My Fasting Friends app! Use invite code: ${activeChallenge.inviteCode}`
+      `Join my fasting challenge "${activeChallenge.name}" on My Fasting Friends app! Use invite code: ${inviteCode}\n\nDirect link: ${challengeLink}`
     );
     
     // Generate WhatsApp URL
@@ -252,37 +300,7 @@ function FriendsTab() {
       
       {activeChallenge ? (
         <div className="active-challenge">
-          <div className="challenge-card">
-            <h3>{activeChallenge.name}</h3>
-            <p className="challenge-dates">
-              {formatDate(activeChallenge.startDate)} - {formatDate(activeChallenge.endDate)}
-            </p>
-            <p className="challenge-description">{activeChallenge.description}</p>
-            <p className="challenge-type">
-              <strong>Fasting Type:</strong> {activeChallenge.fastingType}
-            </p>
-            <p className="challenge-participants">
-              <strong>Participants:</strong> {activeChallenge.participants.length}
-            </p>
-            
-          <div className="challenge-actions">
-              <button 
-                className="primary-button"
-                onClick={handleInviteViaWhatsApp}
-              >
-                Invite Friends
-              </button>
-              
-              <div className="invite-code">
-                <p>Share code: <strong>{activeChallenge.inviteCode}</strong></p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Challenge Sharing Component */}
-          <ChallengeSharing challenge={activeChallenge} />
-          
-          {/* Challenge Progress Tracking - Milestone 6 implementation */}
+          {/* Challenge Progress Section - Moved to top for active challenges */}
           <div className="challenge-progress">
             <h3>Challenge Progress</h3>
             
@@ -407,6 +425,77 @@ function FriendsTab() {
               </div>
             )}
           </div>
+          
+          {/* Challenge Info Card - Moved below progress */}
+          <div className="challenge-card">
+            <h3>{activeChallenge.name}</h3>
+            <p className="challenge-dates">
+              {formatDate(activeChallenge.startDate)} - {formatDate(activeChallenge.endDate)}
+            </p>
+            <p className="challenge-description">{activeChallenge.description}</p>
+            <p className="challenge-type">
+              <strong>Fasting Type:</strong> {activeChallenge.fastingType}
+            </p>
+            <p className="challenge-participants">
+              <strong>Participants:</strong> {activeChallenge.participants.length}
+            </p>
+            
+            {/* Challenge status is active, so invite button is disabled */}
+            <div className="challenge-actions">
+              <button 
+                className="primary-button"
+                onClick={handleInviteViaWhatsApp}
+                disabled={true}
+                title="Cannot add more invites while challenge is active"
+              >
+                Invite Friends
+              </button>
+              
+              <div className="invite-code">
+                <p>Share code: <strong>{activeChallenge.inviteCode}</strong></p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Challenge Sharing Component - Hide for active challenges */}
+          {/* <ChallengeSharing challenge={activeChallenge} /> */}
+          
+          {/* Invite Friends to App - This is now below challenge info */}
+          <div className="invite-section">
+            <h3>Invite Friends to App</h3>
+            <div className="invite-card">
+              <div className="invite-icon">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/767px-WhatsApp.svg.png" 
+                     alt="WhatsApp" width="40" />
+              </div>
+              <div className="invite-content">
+                <h4>Share via WhatsApp</h4>
+                <p>Invite your friends to join you on your fasting journey</p>
+                
+                <button
+                  onClick={() => {
+                    // Create invitation message with challenge info
+                    const inviteCode = activeChallenge.inviteCode || '';
+                    const baseUrl = window.location.origin;
+                    const challengeLink = `${baseUrl}/join-challenge?code=${inviteCode}`;
+                    
+                    const message = encodeURIComponent(
+                      `Want to lose weight or gain focus? Let's do it together. Join me on My Fasting Friends app!\n\nI'm currently in a challenge called "${activeChallenge.name}". You can join too using this link: ${challengeLink}`
+                    );
+                    
+                    // Generate WhatsApp URL
+                    const whatsappUrl = `https://wa.me/?text=${message}`;
+                    
+                    // Open WhatsApp
+                    window.open(whatsappUrl, '_blank');
+                  }}
+                  className="secondary-button whatsapp-button"
+                >
+                  Invite to App
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="no-active-challenge">
@@ -451,41 +540,43 @@ function FriendsTab() {
               </div>
             )}
           </div>
+          
+          {/* Invite Friends Section for non-active challenge users */}
+          <div className="invite-section">
+            <h3>Invite Friends to App</h3>
+            <div className="invite-card">
+              <div className="invite-icon">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/767px-WhatsApp.svg.png" 
+                     alt="WhatsApp" width="40" />
+              </div>
+              <div className="invite-content">
+                <h4>Share via WhatsApp</h4>
+                <p>Invite your friends to join you on your fasting journey</p>
+                
+                <button
+                  onClick={() => {
+                    // Create invitation message (generic for non-challenge users)
+                    const message = encodeURIComponent(
+                      "Want to lose weight or gain focus? Let's do it together. Join me on My Fasting Friends. Link: https://my-fasting-friends-app.web.app"
+                    );
+                    
+                    // Generate WhatsApp URL
+                    const whatsappUrl = `https://wa.me/?text=${message}`;
+                    
+                    // Open WhatsApp
+                    window.open(whatsappUrl, '_blank');
+                  }}
+                  className="secondary-button whatsapp-button"
+                >
+                  Invite to App
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
       
-      <div className="invite-section">
-        <h3>Invite Friends to App</h3>
-        <div className="invite-card">
-          <div className="invite-icon">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/767px-WhatsApp.svg.png" 
-                 alt="WhatsApp" width="40" />
-          </div>
-          <div className="invite-content">
-            <h4>Share via WhatsApp</h4>
-            <p>Invite your friends to join you on your fasting journey</p>
-            
-            <button
-              onClick={() => {
-                // Create invitation message
-                const message = encodeURIComponent(
-                  "Want to lose weight or gain focus? Let's do it together. Join me on My Fasting Friends. Link: https://my-fasting-friends-app.web.app"
-                );
-                
-                // Generate WhatsApp URL
-                const whatsappUrl = `https://wa.me/?text=${message}`;
-                
-                // Open WhatsApp
-                window.open(whatsappUrl, '_blank');
-              }}
-              className="secondary-button whatsapp-button"
-            >
-              Invite to App
-            </button>
-          </div>
-        </div>
-      </div>
-      
+      {/* Coming Soon Section */}
       <div className="coming-soon-section">
         <h3>Coming Soon</h3>
         <p>Friend requests and challenge leaderboards will be available in the next update!</p>

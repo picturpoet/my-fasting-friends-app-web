@@ -1,0 +1,79 @@
+.fasting-timer {
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.timer-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.time-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.time-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.time-separator {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0.5rem;
+  color: var(--primary-color);
+  padding-bottom: 1rem;
+}
+
+.fasting-progress-bar {
+  margin: 1rem 0;
+}
+
+.progress-track {
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease-in-out;
+  animation: pulse 2s infinite;
+}
+
+.fasting-status-text {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
+
+/* Pulse animation for progress bar */
+@keyframes pulse {
+  0% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}

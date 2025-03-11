@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import '../styles/pastRing.css';
 
-function PastRing({ progress, date }) {
+function PastRing({ progress, date, small = false, hours = null }) {
   const canvasRef = useRef(null);
   
   useEffect(() => {
@@ -10,7 +11,7 @@ function PastRing({ progress, date }) {
     const ctx = canvas.getContext('2d');
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 5;
+    const radius = Math.min(centerX, centerY) - (small ? 3 : 5);
     
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -19,7 +20,7 @@ function PastRing({ progress, date }) {
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.strokeStyle = '#f0f0f0';
-    ctx.lineWidth = 8;
+    ctx.lineWidth = small ? 4 : 8;
     ctx.stroke();
     
     // Draw progress arc
@@ -41,20 +42,20 @@ function PastRing({ progress, date }) {
         ctx.strokeStyle = '#F44336'; // Red for low progress
       }
       
-      ctx.lineWidth = 8;
+      ctx.lineWidth = small ? 4 : 8;
       ctx.stroke();
     }
-  }, [progress]);
+  }, [progress, small]);
 
   return (
-    <div className="past-ring-container">
+    <div className={`past-ring-container ${small ? 'small-ring' : ''}`}>
       <canvas 
         ref={canvasRef} 
-        width="80" 
-        height="80" 
+        width={small ? "50" : "80"} 
+        height={small ? "50" : "80"} 
       ></canvas>
       <div className="past-progress-text">
-        {Math.round(progress)}%
+        {hours !== null ? `${hours}h` : `${Math.round(progress)}%`}
       </div>
       {date && <div className="past-date">{date}</div>}
     </div>

@@ -549,3 +549,10 @@
 .secondary-button:hover {
   background-color: rgba(12, 192, 223, 0.1);
 }
+
+/* Disabled button style for challenge actions */
+.challenge-actions .primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #888;
+}

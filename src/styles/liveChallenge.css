@@ -1,0 +1,31 @@
+.live-challenge-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.live-challenge-actions button {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.live-challenge-actions button:hover {
+  transform: translateY(-2px);
+}
+
+/* View Friends button - using the secondary-button style for consistency */
+
+@media (min-width: 768px) {
+  .live-challenge-actions {
+    flex-direction: row;
+  }
+  
+  .live-challenge-actions button {
+    flex: 1;
+  }
+}

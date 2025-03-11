@@ -1,15 +1,25 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TodaysRing from './TodaysRing';
 import PastRing from './PastRing';
 import Banner from './Banner';
 import WelcomeComponent from './WelcomeComponent';
+import CountdownTimer from './CountdownTimer';
+import ChallengeHeader from './ChallengeHeader';
+import StreakDisplay from './StreakDisplay';
+import FastingTimer from './FastingTimer';
+import DevTools from './DevTools'; // Import DevTools
+import { WhyTogetherSection, WhyPenguinsSection } from './InfoSections';
 import { getUserProfile, updateUserProfile, startFasting, endFasting, getFastingRecords } from '../services/firestoreService';
 import { useUser } from '../contexts/UserContext';
 import '../styles/loading.css';
+import '../styles/challengeInfo.css';
+import '../styles/liveChallenge.css';
 
 function FastTab() {
   // Use UserContext
   const { user, activeChallenge } = useUser();
+  const navigate = useNavigate();
   
   // State
   const [userProfile, setUserProfile] = useState(null);
@@ -22,6 +32,9 @@ function FastTab() {
   const [pastRecords, setPastRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [challengeCountdown, setChallengeCountdown] = useState(null);
+  
+  // Dev tools state - for testing only
+  const [overrideStartDate, setOverrideStartDate] = useState(false);
   
   // Fetch user profile on component mount
   useEffect(() => {
@@ -93,6 +106,25 @@ function FastTab() {
     const updateProgress = () => {
       const progress = calculateProgressForRecord(activeFastingRecord);
       setDailyProgress(progress);
+      
+      // Check if we need to auto-end the fast
+      const now = new Date();
+      const startDate = activeFastingRecord.startTime.toDate();
+      const targetEndTime = activeFastingRecord.targetEndTime.toDate();
+      
+      // For 16:8 and OMAD automatically end the fast if:
+      // 1. It's past target end time
+      // 2. It's a new day (past midnight)
+      // 3. The fast type is not 'Long fast'
+      if (activeFastingRecord.fastingType !== 'Long fast') {
+        const isNewDay = now.getDate() !== startDate.getDate();
+        const isPastEndTime = now >= targetEndTime;
+        
+        if (isPastEndTime || isNewDay) {
+          // Auto-end the fast
+          handleEndFasting();
+        }
+      }
     };
     
     // Update immediately
@@ -102,6 +134,7 @@ function FastTab() {
     const intervalId = setInterval(updateProgress, 60000);
     
     return () => clearInterval(intervalId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFastingRecord]);
   
   // Calculate challenge countdown
@@ -158,6 +191,34 @@ function FastTab() {
   }, []);
   
   const endTime = calculateEndTime(startTime, fastingType);
+  
+  // Check if challenge has started yet
+  const isChallengeStarted = useCallback(() => {
+    if (!activeChallenge) return false;
+    
+    // For development testing - allow overriding the actual date check
+    if (overrideStartDate) return true;
+    
+    const now = new Date();
+    const startDate = activeChallenge.startDate.toDate();
+    return now >= startDate;
+  }, [activeChallenge, overrideStartDate]);
+  
+  // Calculate time until challenge starts
+  const calculateTimeToStart = useCallback(() => {
+    if (!activeChallenge) return { hours: 0, minutes: 0 };
+    
+    const now = new Date();
+    const startDate = activeChallenge.startDate.toDate();
+    
+    if (now >= startDate) return { hours: 0, minutes: 0 };
+    
+    const diffMs = startDate - now;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return { hours: diffHours, minutes: diffMinutes };
+  }, [activeChallenge]);
   
   // Handle fasting type change
   const handleFastingTypeChange = async (event) => {
@@ -231,6 +292,36 @@ function FastTab() {
     }
   };
   
+  // Handle inviting friends to challenge
+  const handleInviteFriends = () => {
+    if (!activeChallenge) return;
+    
+    // Create invitation message
+    const inviteCode = activeChallenge.inviteCode || '';
+    const baseUrl = window.location.origin;
+    const challengeLink = `${baseUrl}/join-challenge?code=${inviteCode}`;
+    
+    const message = encodeURIComponent(
+      `Join my fasting challenge "${activeChallenge.name}" on My Fasting Friends app! Use invite code: ${inviteCode}\n\nDirect link: ${challengeLink}`
+    );
+    
+    // Generate WhatsApp URL
+    const whatsappUrl = `https://wa.me/?text=${message}`;
+    
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank');
+  };
+  
+  // Handle navigation to Friends tab to view challenge progress
+  const handleViewFriends = () => {
+    navigate('/friends');
+  };
+  
+  // Handle toggling challenge status for development testing
+  const handleToggleChallengeStatus = () => {
+    setOverrideStartDate(prev => !prev);
+  };
+  
   if (isLoading) {
     return <div className="loading-container">Loading...</div>;
   }
@@ -239,101 +330,126 @@ function FastTab() {
   if (!activeChallenge) {
     return <WelcomeComponent />;
   }
-
-  return (
-    <div className="fast-tab">
-      <h2>Track Your Fast</h2>
-      
-      {/* Challenge banner - show when there's an active challenge */}
-      {activeChallenge && (
-        <div className="challenge-banner">
-          <h3>Challenge: {activeChallenge.name}</h3>
-          {challengeCountdown && <p className="challenge-countdown">{challengeCountdown}</p>}
-          {activeChallenge.fastingType && (
-            <p className="challenge-type">Using {activeChallenge.fastingType} fasting method</p>
-          )}
+  
+  // Show upcoming challenge screen for challenges that haven't started yet
+  const challengeStarted = isChallengeStarted();
+  const timeToStart = calculateTimeToStart();
+  
+  if (activeChallenge && !challengeStarted) {
+    return (
+      <div className="fast-tab">
+        <div className="challenge-info-card">
+          <div className="challenge-info-header">
+            <h2>You're in!</h2>
+            <p>{activeChallenge.name}</p>
+          </div>
+          
+          <div className="challenge-details">
+            <div className="challenge-detail">
+              <span className="challenge-detail-label">Challenge Duration:</span>
+              <span className="challenge-detail-value">
+                {new Date(activeChallenge.startDate.seconds * 1000).toLocaleDateString()} - {new Date(activeChallenge.endDate.seconds * 1000).toLocaleDateString()}
+              </span>
+            </div>
+            
+            <div className="challenge-detail">
+              <span className="challenge-detail-label">Fasting Type:</span>
+              <span className="challenge-detail-value">{activeChallenge.fastingType}</span>
+            </div>
+          </div>
+          
+          <div className="challenge-description">
+            {activeChallenge.description}
+          </div>
         </div>
-      )}
-      
-      {/* Banner showing fasting schedule */}
-      <Banner 
-        isFasting={!!activeFastingRecord} 
-        endTime={activeFastingRecord ? new Date(activeFastingRecord.targetEndTime.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : endTime} 
-      />
-      
-      {/* Today's progress ring */}
-      <TodaysRing progress={dailyProgress} />
-      
-      {/* Fasting controls */}
-      <div className="fasting-controls">
-        {!activeFastingRecord ? (
+        
+        <CountdownTimer hours={timeToStart.hours} minutes={timeToStart.minutes} />
+        
+        <TodaysRing progress={0} />
+        
+        <div className="upcoming-challenge-actions">
           <button 
             className="primary-button" 
-            onClick={handleStartFasting}
-            disabled={activeChallenge?.startDate?.toDate() > new Date()}
+            disabled={true}
           >
-            {activeChallenge?.startDate?.toDate() > new Date() 
-              ? "Challenge hasn't started yet" 
-              : activeChallenge 
-                ? "Start Challenge Fast" 
-                : "Start Fasting"}
+            Challenge Hasn't Started Yet
           </button>
-        ) : (
-          <button className="secondary-button" onClick={handleEndFasting}>
-            End Fasting
-          </button>
-        )}
-      </div>
-      
-      {/* Past days progress */}
-      {pastRecords.length > 0 && (
-        <>
-          <h3>Past 7 Days</h3>
-          <div className="past-records-container">
-            {pastRecords.map((record, index) => (
-              <PastRing 
-                key={record.id || index} 
-                progress={record.completionPercentage} 
-                date={new Date(record.date.seconds * 1000).toLocaleDateString()} 
-              />
-            ))}
-          </div>
-        </>
-      )}
-      
-      {/* Fasting Settings */}
-      <div className="settings-container">
-        <h3>Fasting Schedule</h3>
-        
-        <div>
-          <label htmlFor="fastingType">Fasting Type:</label>
-          <select
-            id="fastingType"
-            value={fastingType}
-            onChange={handleFastingTypeChange}
+          <button 
+            className="secondary-button" 
+            onClick={handleInviteFriends}
           >
-            <option value="16:8">16:8</option>
-            <option value="OMAD">OMAD (23:1)</option>
-            <option value="5:2">5:2</option>
-          </select>
+            Invite More Friends
+          </button>
         </div>
-
-        <div>
-          <label htmlFor="startTime">Start Time:</label>
-          <input
-            type="time"
-            id="startTime"
-            value={startTime}
-            onChange={handleStartTimeChange}
+        
+        <WhyTogetherSection />
+        <WhyPenguinsSection />
+        
+        {/* Dev tools for testing */}
+        <DevTools 
+          activeChallenge={activeChallenge}
+          onToggleChallenge={handleToggleChallengeStatus}
+        />
+      </div>
+    );
+  }
+  
+  // Show live challenge view for active challenges
+  if (activeChallenge && challengeStarted) {
+    return (
+      <div className="fast-tab">
+        <ChallengeHeader challenge={activeChallenge} />
+        
+        {activeFastingRecord && (
+          <FastingTimer 
+            startTime={activeFastingRecord.startTime} 
+            targetEndTime={activeFastingRecord.targetEndTime} 
           />
+        )}
+        
+        <TodaysRing progress={dailyProgress} />
+        
+        <div className="live-challenge-actions">
+          {!activeFastingRecord ? (
+            <button 
+              className="primary-button" 
+              onClick={handleStartFasting}
+            >
+              Start Fast
+            </button>
+          ) : (
+            <button 
+              className="secondary-button" 
+              onClick={handleEndFasting}
+            >
+              End Fast
+            </button>
+          )}
+          
+          <button 
+            className="secondary-button" 
+            onClick={handleViewFriends}
+          >
+            View Friends
+          </button>
         </div>
         
-        <p className="fasting-schedule-summary">
-          Starting at {startTime}, you'll fast until {endTime} ({fastingType})
-        </p>
+        <StreakDisplay records={pastRecords} />
+        
+        <WhyTogetherSection />
+        <WhyPenguinsSection />
+        
+        {/* Dev tools for testing */}
+        <DevTools 
+          activeChallenge={activeChallenge}
+          onToggleChallenge={handleToggleChallengeStatus}
+        />
       </div>
-    </div>
-  );
+    );
+  }
+  
+  // Fallback - should never reach here given our conditional checks
+  return <div className="loading-container">Unable to determine challenge state</div>;
 }
 
 export default FastTab;

@@ -1,0 +1,49 @@
+.streak-display-container {
+  margin: 2rem 0;
+}
+
+.streak-display-container h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  font-size: 1.3rem;
+}
+
+.streak-rings {
+  display: flex;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  gap: 0.5rem;
+}
+
+.streak-ring-item {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 70px;
+}
+
+.no-streak-message {
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+/* Custom scrollbar for the streak display */
+.streak-rings::-webkit-scrollbar {
+  height: 6px;
+}
+
+.streak-rings::-webkit-scrollbar-track {
+  background: var(--bg-color);
+  border-radius: 10px;
+}
+
+.streak-rings::-webkit-scrollbar-thumb {
+  background: var(--secondary-color);
+  border-radius: 10px;
+}
+
+.streak-rings::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}

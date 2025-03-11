@@ -1,0 +1,38 @@
+.past-ring-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  margin: 0 5px;
+}
+
+.past-progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.past-date {
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Small ring styling */
+.small-ring .past-progress-text {
+  font-size: 0.7rem;
+}
+
+.small-ring .past-date {
+  font-size: 0.7rem;
+  margin-top: 2px;
+}
+
+/* Completed ring specific styles */
+.past-ring-container.completed canvas {
+  filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.5));
+}
