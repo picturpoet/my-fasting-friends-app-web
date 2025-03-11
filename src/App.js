@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import FastTab from './components/FastTab';
 import FriendsTab from './components/FriendsTab';
 import MeTab from './components/MeTab';
@@ -15,13 +15,17 @@ import './styles/components.css';
 // Layout component with navigation
 function AppLayout({ children }) {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = React.useState(() => {
-    // Determine active tab based on current path
-    const path = window.location.pathname;
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine active tab based on the current path
+  const getActiveTab = () => {
+    const path = location.pathname;
     if (path.includes('/friends')) return 'friends';
     if (path.includes('/me')) return 'me';
     return 'fast';
-  });
+  };
+  const activeTab = getActiveTab();
 
   const handleLogout = async () => {
     try {
@@ -53,8 +57,7 @@ function AppLayout({ children }) {
           className={activeTab === 'fast' ? 'active' : ''}
           onClick={(e) => {
             e.preventDefault();
-            setActiveTab('fast');
-            window.history.pushState(null, '', '/');
+            navigate('/');
           }}
         >
           Fast
@@ -64,8 +67,7 @@ function AppLayout({ children }) {
           className={activeTab === 'friends' ? 'active' : ''}
           onClick={(e) => {
             e.preventDefault();
-            setActiveTab('friends');
-            window.history.pushState(null, '', '/friends');
+            navigate('/friends');
           }}
         >
           Friends
@@ -75,8 +77,7 @@ function AppLayout({ children }) {
           className={activeTab === 'me' ? 'active' : ''}
           onClick={(e) => {
             e.preventDefault();
-            setActiveTab('me');
-            window.history.pushState(null, '', '/me');
+            navigate('/me');
           }}
         >
           Me
