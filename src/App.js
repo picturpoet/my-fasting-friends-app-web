@@ -119,15 +119,18 @@ function AuthRoute() {
 
 // Main App component wrapped with UserProvider
 function App() {
+  // Force version update to prevent caching issues
+  const appVersion = "1741732126311"; // Update this when deploying changes
+  
   return (
     <UserProvider>
       <Router>
         <Routes>
           <Route path="/auth" element={<AuthRoute />} />
           
-          <Route path="/" element={<ProtectedRoute><FastTab /></ProtectedRoute>} />
-          <Route path="/friends" element={<ProtectedRoute><FriendsTab /></ProtectedRoute>} />
-          <Route path="/me" element={<ProtectedRoute><MeTab /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><FastTab key={appVersion} /></ProtectedRoute>} />
+          <Route path="/friends" element={<ProtectedRoute><FriendsTab key={appVersion} /></ProtectedRoute>} />
+          <Route path="/me" element={<ProtectedRoute><MeTab key={appVersion} /></ProtectedRoute>} />
           
           <Route path="/create-challenge" element={<ProtectedRoute><CreateChallenge /></ProtectedRoute>} />
           <Route path="/join-challenge" element={<ProtectedRoute><JoinChallenge /></ProtectedRoute>} />

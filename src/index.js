@@ -1,26 +1,45 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-// Create a root element for the app
-const rootElement = document.getElementById('root');
-
-// Check if root element exists before creating React root
-if (rootElement) {
-  const root = ReactDOM.createRoot(rootElement);
+// Force cache clearing on app launch
+if ('serviceWorker' in navigator) {
+  // Unregister any existing service workers
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let registration of registrations) {
+      registration.unregister();
+    }
+  });
   
-  root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-
-  // If you want to start measuring performance in your app, pass a function
-  // to log results (for example: reportWebVitals(console.log))
-  // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-  reportWebVitals();
-} else {
-  console.error('Cannot find element with id "root"');
+  // Clear all caches
+  caches.keys().then(function(cacheNames) {
+    cacheNames.forEach(function(cacheName) {
+      caches.delete(cacheName);
+    });
+  });
 }
+
+// Add timestamp to localStorage to force refresh on version changes
+const appVersion = "1741732126311";
+const lastVersion = localStorage.getItem('appVersion');
+if (lastVersion !== appVersion) {
+  localStorage.setItem('appVersion', appVersion);
+  
+  // Force reload if version changed and this isn't the first load
+  if (lastVersion) {
+    window.location.reload(true); // Hard reload
+  }
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();

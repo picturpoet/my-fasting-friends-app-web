@@ -157,7 +157,7 @@ function MeTab() {
 
   return (
     <div className="me-tab">
-      {message && <div className="message">{message}</div>}
+      {message && <div className="flash-message">{message}</div>}
       
       <div className="profile-details">
         {isEditing ? (
@@ -209,34 +209,34 @@ function MeTab() {
         <h3>Weight Tracking</h3>
         
         {weightRecords && weightRecords.length > 0 ? (
-          <div className="weight-chart-container">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={formatChartData()}
-                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="weight" 
-                  stroke="var(--primary-color)" 
-                  strokeWidth={2} 
-                  dot={{ className: 'weight-point', r: 4 }}
-                />
-                {goalWeight && (
-                  <ReferenceLine 
-                    y={goalWeight} 
-                    stroke="#4caf50" 
-                    strokeDasharray="3 3" 
-                    className="goal-line"
-                    label={{ position: 'right', value: `Goal: ${goalWeight}`, fill: '#4caf50' }} 
-                  />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="weight-data-display">
+            <div className="weight-table-container">
+              <table className="weight-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Weight (kg)</th>
+                    {goalWeight && <th>To Goal (kg)</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {weightRecords.map((record, index) => {
+                    const difference = goalWeight ? (record.weight - goalWeight).toFixed(1) : null;
+                    return (
+                      <tr key={index} className={difference && difference <= 0 ? "goal-reached" : ""}>
+                        <td>{formatDate(record.date)}</td>
+                        <td>{record.weight} kg</td>
+                        {goalWeight && (
+                          <td className={difference <= 0 ? "positive-diff" : "negative-diff"}>
+                            {difference > 0 ? `${difference}` : (difference < 0 ? `${Math.abs(difference)}` : '0')}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           <p>No weight records yet. Start tracking your progress!</p>
@@ -244,15 +244,15 @@ function MeTab() {
         
         <div className="weight-controls">
           {isAddingWeight ? (
-            <div className="input-group">
+            <div className="input-group weight-input-group">
               <input
                 type="number"
                 step="0.1"
                 value={newWeight}
                 onChange={(e) => setNewWeight(e.target.value)}
-                placeholder="Enter your current weight"
+                placeholder="Enter your weight in kg"
               />
-              <div className="button-group">
+              <div className="button-group weight-button-group">
                 <button 
                   className="primary-button"
                   onClick={handleSaveWeight}
@@ -280,7 +280,7 @@ function MeTab() {
           )}
           
           <div className="goal-weight-control">
-            <label>Goal Weight:</label>
+            <label>Goal Weight (kg):</label>
             <input
               type="number"
               step="0.1"
@@ -295,6 +295,23 @@ function MeTab() {
               Set Goal
             </button>
           </div>
+        </div>
+        
+        {/* Weight Feedback Message */}
+        <div className="weight-feedback">
+          {weightRecords && weightRecords.length > 0 && goalWeight && (
+            <div className="weight-status">
+              {weightRecords[weightRecords.length - 1].weight <= goalWeight ? (
+                <div className="success-message">
+                  🎉 Congratulations! You've reached your goal weight!
+                </div>
+              ) : (
+                <div className="progress-message">
+                  You are {(weightRecords[weightRecords.length - 1].weight - goalWeight).toFixed(1)} kg away from your goal.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       

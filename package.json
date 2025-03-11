@@ -1,6 +1,6 @@
 {
   "name": "my-fasting-friends",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "dependencies": {
     "firebase": "^9.22.0",
@@ -14,10 +14,11 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "node updateVersion.js && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy": "npm run build && firebase deploy"
+    "deploy": "npm run build && firebase deploy",
+    "fresh-deploy": "node updateVersion.js && react-scripts build && firebase deploy"
   },
   "eslintConfig": {
     "extends": [
