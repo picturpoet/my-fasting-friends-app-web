@@ -56,7 +56,9 @@ export const createUserProfile = async (userId, phoneNumber) => {
       // New fields for milestone 1
       userState: 'new',
       activeChallenge: null,
-      uniqueInviteId: generateUniqueInviteId()
+      uniqueInviteId: generateUniqueInviteId(),
+      // Weight tracking fields
+      weightGoal: null
     };
     
     await setDoc(userRef, userData);
@@ -812,6 +814,161 @@ export const sendFriendRequest = async (senderId, recipientId) => {
     return { success: true, message: 'Friend request sent' };
   } catch (error) {
     console.error('Error sending friend request:', error);
+    throw error;
+  }
+};
+
+// Weight tracking functions
+export const addWeightRecord = async (userId, weight, date = new Date()) => {
+  try {
+    const weightData = {
+      userId,
+      weight: parseFloat(weight),
+      date: Timestamp.fromDate(date),
+      createdAt: Timestamp.now()
+    };
+    
+    const docRef = await addDoc(collection(db, 'weightRecords'), weightData);
+    return { id: docRef.id, ...weightData };
+  } catch (error) {
+    console.error('Error adding weight record:', error);
+    throw error;
+  }
+};
+
+export const getWeightRecords = async (userId, limit = 30) => {
+  try {
+    const q = query(
+      collection(db, 'weightRecords'),
+      where('userId', '==', userId)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    let records = [];
+    
+    querySnapshot.forEach((doc) => {
+      records.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    // Sort by date
+    records.sort((a, b) => a.date.seconds - b.date.seconds);
+    
+    // Return the most recent records up to the limit
+    return records.slice(-limit);
+  } catch (error) {
+    console.error('Error getting weight records:', error);
+    throw error;
+  }
+};
+
+export const updateWeightGoal = async (userId, goalWeight) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      'weightGoal': parseFloat(goalWeight)
+    });
+    return true;
+  } catch (error) {
+    console.error('Error updating weight goal:', error);
+    throw error;
+  }
+};
+
+export const getWeightGoal = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userSnap.data();
+    return userData.weightGoal || null;
+  } catch (error) {
+    console.error('Error getting weight goal:', error);
+    throw error;
+  }
+};
+
+// Fasting statistics functions
+export const getUserFastingStats = async (userId) => {
+  try {
+    // Get all fasting records for the user
+    const q = query(
+      collection(db, 'fastingRecords'),
+      where('userId', '==', userId)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const records = [];
+    
+    querySnapshot.forEach((doc) => {
+      records.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    // Calculate statistics
+    const completedFasts = records.filter(r => r.status === 'completed').length;
+    const totalFasts = records.length;
+    const successRate = totalFasts > 0 ? Math.round((completedFasts / totalFasts) * 100) : 0;
+    
+    // Get challenge stats
+    const activeChallenge = await getUserActiveChallenge(userId);
+    let challengeStats = null;
+    
+    if (activeChallenge) {
+      const participantQuery = query(
+        collection(db, 'challengeParticipants'),
+        where('challengeId', '==', activeChallenge.id),
+        where('userId', '==', userId)
+      );
+      
+      const participantSnapshot = await getDocs(participantQuery);
+      
+      if (!participantSnapshot.empty) {
+        const participantData = participantSnapshot.docs[0].data();
+        
+        challengeStats = {
+          completedDays: participantData.completedDays || 0,
+          totalScore: participantData.totalScore || 0,
+          rank: participantData.rank || 0,
+          challengeName: activeChallenge.name
+        };
+      }
+    }
+    
+    // Get longest streak
+    let currentStreak = 0;
+    let longestStreak = 0;
+    
+    // Sort records by date for streak calculation
+    records.sort((a, b) => a.date.seconds - b.date.seconds);
+    
+    for (let i = 0; i < records.length; i++) {
+      if (records[i].status === 'completed') {
+        currentStreak++;
+        longestStreak = Math.max(longestStreak, currentStreak);
+      } else {
+        currentStreak = 0;
+      }
+    }
+    
+    return {
+      completedFasts,
+      totalFasts,
+      successRate,
+      longestStreak,
+      currentStreak,
+      challengeStats
+    };
+  } catch (error) {
+    console.error('Error getting user fasting stats:', error);
     throw error;
   }
 };
