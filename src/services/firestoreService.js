@@ -347,65 +347,119 @@ export const createChallenge = async (name, description, startDate, endDate, fas
 
 export const joinChallenge = async (challengeId, userId) => {
   try {
+    console.log(`Starting join challenge process for user ${userId} to challenge ${challengeId}`);
+    
     // First check if the user already has an active challenge
     const userRef = doc(db, 'users', userId);
+    console.log(`Fetching user data for ${userId}`);
     const userSnap = await getDoc(userRef);
     
     if (!userSnap.exists()) {
+      console.error(`User ${userId} not found`);
       throw new Error('User not found');
     }
     
     const userData = userSnap.data();
+    console.log(`User data retrieved, active challenge: ${userData.activeChallenge}`);
+    
     if (userData.activeChallenge) {
+      console.error(`User ${userId} already has active challenge: ${userData.activeChallenge}`);
       throw new Error('You already have an active challenge. You must complete or leave it before joining a new one.');
     }
     
     // Verify the challenge exists and user is not already a participant
     const challengeRef = doc(db, 'challenges', challengeId);
+    console.log(`Fetching challenge data for ${challengeId}`);
     const challengeSnap = await getDoc(challengeRef);
     
     if (!challengeSnap.exists()) {
+      console.error(`Challenge ${challengeId} not found`);
       throw new Error('Challenge not found');
     }
     
     const challengeData = challengeSnap.data();
+    console.log(`Challenge data retrieved: ${JSON.stringify(challengeData)}`);
     
     // Check if challenge is expired
     if (challengeData.status === 'expired') {
+      console.error(`Challenge ${challengeId} is expired`);
       throw new Error('This challenge has expired');
     }
     
     // Check if user is already a participant
     if (challengeData.participants && challengeData.participants.includes(userId)) {
+      console.log(`User ${userId} is already a participant in challenge ${challengeId}`);
       return { success: true, message: 'Already a participant' };
     }
     
     // Make sure participants is an array (defensive programming)
     const currentParticipants = challengeData.participants || [];
+    console.log(`Current participants: ${JSON.stringify(currentParticipants)}`);
     
-    // All challenges are public and available to join by anyone with the invite code
-    // Add user to participants array
-    await updateDoc(challengeRef, {
-      participants: [...currentParticipants, userId]
-    });
+    try {
+      // All challenges are public and available to join by anyone with the invite code
+      // Add user to participants array
+      console.log(`Updating challenge ${challengeId} to add user ${userId} to participants`);
+      await updateDoc(challengeRef, {
+        participants: [...currentParticipants, userId]
+      });
+      console.log(`Successfully updated challenge participants`);
+    } catch (error) {
+      console.error(`Error updating challenge participants: ${error.message}`);
+      throw new Error(`Failed to update challenge participants: ${error.message}`);
+    }
     
-    // Create participant record
-    await addDoc(collection(db, 'challengeParticipants'), {
-      challengeId,
-      userId,
-      joinedAt: Timestamp.now(),
-      dailyScores: [],
-      totalScore: 0,
-      rank: currentParticipants.length + 1,
-      completedDays: 0
-    });
+    try {
+      // Create participant record
+      console.log(`Creating challenge participant record for user ${userId} in challenge ${challengeId}`);
+      await addDoc(collection(db, 'challengeParticipants'), {
+        challengeId,
+        userId,
+        joinedAt: Timestamp.now(),
+        dailyScores: [],
+        totalScore: 0,
+        rank: currentParticipants.length + 1,
+        completedDays: 0
+      });
+      console.log(`Successfully created challenge participant record`);
+    } catch (error) {
+      console.error(`Error creating participant record: ${error.message}`);
+      // If this fails, try to remove the user from participants
+      try {
+        console.log(`Attempting to rollback participants update`);
+        await updateDoc(challengeRef, {
+          participants: currentParticipants
+        });
+      } catch (rollbackError) {
+        console.error(`Failed to rollback participants update: ${rollbackError.message}`);
+      }
+      throw new Error(`Failed to create participant record: ${error.message}`);
+    }
     
-    // Update the user's profile to set this as their active challenge and change state to active
-    await updateDoc(userRef, {
-      activeChallenge: challengeId,
-      userState: 'active'
-    });
+    try {
+      // Update the user's profile to set this as their active challenge and change state to active
+      console.log(`Updating user ${userId} profile to set active challenge to ${challengeId}`);
+      await updateDoc(userRef, {
+        activeChallenge: challengeId,
+        userState: 'active'
+      });
+      console.log(`Successfully updated user profile`);
+    } catch (error) {
+      console.error(`Error updating user profile: ${error.message}`);
+      // If this fails, try to clean up the previous operations
+      try {
+        console.log(`Attempting to rollback challenge changes`);
+        await updateDoc(challengeRef, {
+          participants: currentParticipants
+        });
+        // Could also try to remove the participant record here, but it's more complex
+      } catch (rollbackError) {
+        console.error(`Failed to rollback challenge changes: ${rollbackError.message}`);
+      }
+      throw new Error(`Failed to update user profile: ${error.message}`);
+    }
     
+    console.log(`Successfully joined challenge ${challengeId}`);
     return { success: true, message: 'Successfully joined challenge' };
   } catch (error) {
     console.error('Error joining challenge:', error);

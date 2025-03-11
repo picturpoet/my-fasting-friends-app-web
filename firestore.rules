@@ -10,20 +10,6 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
     
-    function isFriend(userId) {
-      let friendQuery1 = exists(/databases/$(database)/documents/friendships/{friendshipId})
-                        && get(/databases/$(database)/documents/friendships/{friendshipId}).data.user1Id == request.auth.uid 
-                        && get(/databases/$(database)/documents/friendships/{friendshipId}).data.user2Id == userId
-                        && get(/databases/$(database)/documents/friendships/{friendshipId}).data.status == 'accepted';
-      
-      let friendQuery2 = exists(/databases/$(database)/documents/friendships/{friendshipId})
-                        && get(/databases/$(database)/documents/friendships/{friendshipId}).data.user1Id == userId
-                        && get(/databases/$(database)/documents/friendships/{friendshipId}).data.user2Id == request.auth.uid
-                        && get(/databases/$(database)/documents/friendships/{friendshipId}).data.status == 'accepted';
-      
-      return friendQuery1 || friendQuery2;
-    }
-    
     function isChallengeMember(challengeId) {
       return exists(/databases/$(database)/documents/challenges/$(challengeId))
              && get(/databases/$(database)/documents/challenges/$(challengeId)).data.participants.hasAny([request.auth.uid]);
@@ -50,7 +36,8 @@ service cloud.firestore {
     
     match /fastingRecords/{recordId} {
       // Only the owner can read/write their own fasting records
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      allow write: if isSignedIn() && isOwner(request.resource.data.userId);
     }
     
     match /challenges/{challengeId} {

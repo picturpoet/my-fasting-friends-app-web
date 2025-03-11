@@ -38,11 +38,15 @@ const JoinChallenge = () => {
       setError('');
       
       // Get the challenge by invite code
+      console.log('Fetching challenge with invite code:', inviteCode.trim());
       const challengeData = await getChallengeByInviteCode(inviteCode.trim());
+      console.log('Challenge found:', challengeData);
       setChallenge(challengeData);
       
       // Join the challenge
+      console.log('Attempting to join challenge with ID:', challengeData.id);
       const result = await joinChallenge(challengeData.id, user.uid);
+      console.log('Join challenge result:', result);
       
       if (result.success) {
         // Refresh active challenge data
@@ -56,7 +60,7 @@ const JoinChallenge = () => {
       
     } catch (error) {
       console.error('Error joining challenge:', error);
-      setError(error.message);
+      setError(error.message || 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }

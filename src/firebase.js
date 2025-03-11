@@ -13,6 +13,12 @@ const firebaseConfig = {
   measurementId: "G-VL8X6ST5XY"
 };
 
+// Enable Firebase debugging
+if (process.env.NODE_ENV === 'development' || true) {
+  window.localStorage.setItem('debug', 'firebase:*');
+  console.log('Firebase debugging enabled');
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);

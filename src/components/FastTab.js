@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import TodaysRing from './TodaysRing';
 import PastRing from './PastRing';
 import Banner from './Banner';
-import { auth } from '../firebase';
+import WelcomeComponent from './WelcomeComponent';
 import { getUserProfile, updateUserProfile, startFasting, endFasting, getFastingRecords } from '../services/firestoreService';
 import { useUser } from '../contexts/UserContext';
+import '../styles/loading.css';
 
 function FastTab() {
   // Use UserContext
@@ -231,7 +232,12 @@ function FastTab() {
   };
   
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="loading-container">Loading...</div>;
+  }
+  
+  // Show Welcome screen for new users or users without active challenge
+  if (!activeChallenge) {
+    return <WelcomeComponent />;
   }
 
   return (
