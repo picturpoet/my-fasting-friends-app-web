@@ -53,9 +53,9 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         // Creator can update all fields
         isOwner(resource.data.creatorId) || 
-        // Anyone can join with invite code (only adds to participants array)
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']) &&
-         request.resource.data.participants.hasAll(resource.data.participants)) ||
+        // Anyone can join (only modifies the participants array)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']) && 
+        request.resource.data.participants.size() > resource.data.participants.size()) ||
         // Allow status updates (for expiry)
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
          (request.resource.data.status == 'active' || request.resource.data.status == 'expired'))
@@ -70,6 +70,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && isChallengeMember(resource.data.challengeId);
       
       // Any user can create their own participation record for an active challenge
+      // Removed the hasActiveChallenge check since it's handled in the application code
       allow create: if isSignedIn() && 
                      request.resource.data.userId == request.auth.uid &&
                      isChallengeActive(request.resource.data.challengeId);
@@ -108,6 +109,12 @@ service cloud.firestore {
       allow read: if isSignedIn();
       
       // Only the system or owner can create/update achievements
+      allow write: if isSignedIn() && isOwner(request.resource.data.userId);
+    }
+    
+    match /weightRecords/{recordId} {
+      // Only the owner can read/write their own weight records
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
       allow write: if isSignedIn() && isOwner(request.resource.data.userId);
     }
   }

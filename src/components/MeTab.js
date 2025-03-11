@@ -124,7 +124,13 @@ function MeTab() {
       const user = auth.currentUser;
       if (!user) return;
 
-      await updateWeightGoal(user.uid, goalWeight);
+      const goalWeightValue = parseFloat(goalWeight);
+      if (isNaN(goalWeightValue) || goalWeightValue <= 0) {
+        setMessage('Please enter a valid goal weight');
+        return;
+      }
+
+      await updateWeightGoal(user.uid, goalWeightValue);
       setMessage('Weight goal updated successfully!');
       
       // Clear message after 3 seconds
@@ -242,46 +248,51 @@ function MeTab() {
           <p>No weight records yet. Start tracking your progress!</p>
         )}
         
-        <div className="weight-controls">
-          {isAddingWeight ? (
-            <div className="input-group weight-input-group">
-              <input
-                type="number"
-                step="0.1"
-                value={newWeight}
-                onChange={(e) => setNewWeight(e.target.value)}
-                placeholder="Enter your weight in kg"
-              />
-              <div className="button-group weight-button-group">
-                <button 
-                  className="primary-button"
-                  onClick={handleSaveWeight}
-                >
-                  Save
-                </button>
-                <button 
-                  className="secondary-button"
-                  onClick={() => {
-                    setNewWeight('');
-                    setIsAddingWeight(false);
-                  }}
-                >
-                  Cancel
-                </button>
+        <div className="weight-controls-card">
+          <div className="weight-controls">
+            {isAddingWeight ? (
+              <div className="input-group weight-input-group">
+                <label htmlFor="newWeight">Current Weight (kg):</label>
+                <input
+                  id="newWeight"
+                  type="number"
+                  step="0.1"
+                  value={newWeight}
+                  onChange={(e) => setNewWeight(e.target.value)}
+                  placeholder="Enter your weight in kg"
+                />
+                <div className="button-group weight-button-group">
+                  <button 
+                    className="primary-button"
+                    onClick={handleSaveWeight}
+                  >
+                    Save
+                  </button>
+                  <button 
+                    className="secondary-button"
+                    onClick={() => {
+                      setNewWeight('');
+                      setIsAddingWeight(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <button 
-              className="secondary-button"
-              onClick={() => setIsAddingWeight(true)}
-            >
-              Add Weight Record
-            </button>
-          )}
+            ) : (
+              <button 
+                className="secondary-button"
+                onClick={() => setIsAddingWeight(true)}
+              >
+                Add Weight Record
+              </button>
+            )}
+          </div>
           
           <div className="goal-weight-control">
-            <label>Goal Weight (kg):</label>
+            <label htmlFor="goalWeight">Goal Weight (kg):</label>
             <input
+              id="goalWeight"
               type="number"
               step="0.1"
               value={goalWeight || ''}
