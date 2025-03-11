@@ -120,7 +120,7 @@ function AuthRoute() {
 // Main App component wrapped with UserProvider
 function App() {
   // Force version update to prevent caching issues
-  const appVersion = "1741732126311"; // Update this when deploying changes
+  const appVersion = "1741733373535"; // Update this when deploying changes
   
   return (
     <UserProvider>
