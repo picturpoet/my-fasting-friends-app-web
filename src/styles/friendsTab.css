@@ -1,0 +1,551 @@
+/* Friends Tab Styles */
+.friends-tab {
+  padding: 1rem;
+  max-width: 100%;
+}
+
+.friends-tab h2 {
+  color: var(--secondary-color);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Active Challenge Card */
+.challenge-card {
+  background-color: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.challenge-card h3 {
+  color: var(--primary-color-dark);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.challenge-dates {
+  color: var(--dark-gray);
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.challenge-description {
+  color: var(--secondary-color);
+  margin-bottom: 1rem;
+}
+
+.challenge-type, .challenge-participants {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.challenge-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.invite-code {
+  background-color: var(--light-gray);
+  border-radius: 6px;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+/* Challenge Progress Section */
+.challenge-progress {
+  margin-top: 2rem;
+}
+
+.challenge-progress h3 {
+  color: var(--secondary-color);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Participant Cards */
+.participant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.participant-card {
+  background-color: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.participant-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+}
+
+.participant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.participant-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.participant-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--primary-color);
+  color: var(--white);
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.participant-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.participant-details h4 {
+  margin: 0 0 0.25rem 0;
+  color: var(--secondary-color);
+}
+
+.participant-stats {
+  color: var(--dark-gray);
+  font-size: 0.85rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.participant-rank {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--primary-color-dark);
+  background-color: var(--light-gray);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Progress Bar Styling */
+.participant-progress {
+  margin-bottom: 1rem;
+}
+
+.progress-status {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 10px;
+  background-color: var(--light-gray);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
+  /* Background color set dynamically in component */
+}
+
+.progress-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--dark-gray);
+}
+
+/* Action Buttons */
+.participant-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.action-button {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 0.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clap-button {
+  background-color: #e6f7ff; /* Light blue */
+  color: #0689b0;
+}
+
+.clap-button:hover:not(:disabled) {
+  background-color: #cceeff;
+  transform: scale(1.03);
+}
+
+.taunt-button {
+  background-color: #fff0e6; /* Light orange */
+  color: #e67300;
+}
+
+.taunt-button:hover:not(:disabled) {
+  background-color: #ffe0cc;
+  transform: scale(1.03);
+}
+
+.history-button {
+  background-color: #f0f0f0;
+  color: var(--secondary-color);
+}
+
+.history-button:hover:not(:disabled) {
+  background-color: #e0e0e0;
+  transform: scale(1.03);
+}
+
+/* Participant History */
+.participant-history {
+  margin-top: 1.5rem;
+  background-color: var(--light-gray);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.participant-history h5 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  color: var(--secondary-color);
+}
+
+.daily-records {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.daily-record-card {
+  background-color: var(--white);
+  border-radius: 6px;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.daily-record-date {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.daily-record-status {
+  font-size: 0.85rem;
+  font-weight: 500;
+  /* Color set dynamically based on status */
+}
+
+.daily-record-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mini-progress-container {
+  width: 60px;
+  height: 6px;
+  background-color: var(--light-gray);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mini-progress-bar {
+  height: 100%;
+  border-radius: 6px;
+  /* Background color set dynamically */
+}
+
+.no-records, .no-participants, .loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--dark-gray);
+}
+
+/* No Active Challenge Section */
+.no-active-challenge {
+  margin-top: 1rem;
+}
+
+.start-fast-with-friends-banner {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(12, 192, 223, 0.2);
+}
+
+.start-fast-with-friends-banner h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.banner-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Global Leaderboard */
+.leaderboard-section {
+  margin-bottom: 2rem;
+}
+
+.leaderboard-section h3 {
+  color: var(--secondary-color);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.leaderboard {
+  background-color: var(--white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.leaderboard-header {
+  display: grid;
+  grid-template-columns: 0.5fr 2fr 1fr 1fr;
+  background-color: var(--light-gray);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--secondary-color);
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 0.5fr 2fr 1fr 1fr;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--light-gray);
+}
+
+.leaderboard-row:last-child {
+  border-bottom: none;
+}
+
+.rank-col {
+  font-weight: 500;
+}
+
+.name-col {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Challenge Options */
+.challenge-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .challenge-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+.challenge-option-card {
+  background-color: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.challenge-option-card:hover {
+  transform: translateY(-5px);
+}
+
+.challenge-option-card h3 {
+  margin-top: 0;
+  color: var(--secondary-color);
+  margin-bottom: 0.75rem;
+}
+
+.challenge-option-card p {
+  color: var(--dark-gray);
+  margin-bottom: 1.5rem;
+}
+
+/* Invite Section */
+.invite-section {
+  margin-bottom: 2rem;
+}
+
+.invite-section h3 {
+  color: var(--secondary-color);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.invite-card {
+  background-color: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.invite-content {
+  flex: 1;
+}
+
+.invite-content h4 {
+  margin-top: 0;
+  color: var(--secondary-color);
+  margin-bottom: 0.5rem;
+}
+
+.invite-content p {
+  color: var(--dark-gray);
+  margin-bottom: 1rem;
+}
+
+.whatsapp-button {
+  background-color: #25D366; /* WhatsApp green */
+  color: white;
+  border: none;
+}
+
+.whatsapp-button:hover {
+  background-color: #128C7E; /* darker WhatsApp green */
+}
+
+/* Coming Soon Section */
+.coming-soon-section {
+  text-align: center;
+  margin-bottom: 2rem;
+  background-color: var(--light-gray);
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+.coming-soon-section h3 {
+  color: var(--secondary-color);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.coming-soon-section p {
+  color: var(--dark-gray);
+  margin-bottom: 1.5rem;
+}
+
+.feature-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .feature-preview {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animation for progress bars */
+@keyframes fillProgressBar {
+  from { width: 0; }
+  /* final width set inline */
+}
+
+.progress-bar {
+  animation: fillProgressBar 1.5s ease-out forwards;
+}
+
+/* Button styles - overriding global styles */
+.primary-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.primary-button:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.secondary-button {
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondary-button:hover {
+  background-color: rgba(12, 192, 223, 0.1);
+}

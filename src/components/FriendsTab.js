@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import '../styles/colors.css';
 import '../styles/components.css';
-import { getGlobalLeaderboard, getChallengeParticipants } from '../services/firestoreService';
+import '../styles/friendsTab.css';
+import { getGlobalLeaderboard, getChallengeParticipants, getChallengeFastingRecords } from '../services/firestoreService';
+import { addDoc, collection } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function FriendsTab() {
   const { user, userProfile, activeChallenge, userState, refreshActiveChallenge } = useUser();
@@ -14,6 +17,7 @@ function FriendsTab() {
   const [globalLeaderboard, setGlobalLeaderboard] = useState([]);
   const [challengeParticipants, setChallengeParticipants] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [participantRecords, setParticipantRecords] = useState({});
   
   // Load active challenge on component mount
   useEffect(() => {
@@ -34,6 +38,21 @@ function FriendsTab() {
         try {
           const participants = await getChallengeParticipants(activeChallenge.id);
           setChallengeParticipants(participants);
+          
+          // Load participant fasting records
+          const recordsPromises = participants.map(async (participant) => {
+            const records = await getChallengeFastingRecords(activeChallenge.id, participant.userId);
+            return { userId: participant.userId, records };
+          });
+          
+          const participantRecordsArray = await Promise.all(recordsPromises);
+          const recordsObject = {};
+          
+          participantRecordsArray.forEach(item => {
+            recordsObject[item.userId] = item.records;
+          });
+          
+          setParticipantRecords(recordsObject);
         } catch (error) {
           console.error("Error loading challenge participants:", error);
         }
@@ -45,13 +64,85 @@ function FriendsTab() {
     loadData();
   }, [refreshActiveChallenge, activeChallenge]);
   
-  
-  
   // Format dates for display
   const formatDate = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleDateString();
+  };
+  
+  // Calculate progress for progress bar with smoother transition
+  const calculateFastProgress = (record) => {
+    if (!record) return 0;
+    
+    if (record.status === 'completed') {
+      return 100;
+    }
+    
+    if (record.status === 'broken') {
+      return record.completionPercentage || 0;
+    }
+    
+    if (record.status === 'ongoing') {
+      const startTime = record.startTime.toDate();
+      const targetEndTime = record.targetEndTime.toDate();
+      const now = new Date();
+      
+      const totalDuration = targetEndTime.getTime() - startTime.getTime();
+      const elapsedDuration = now.getTime() - startTime.getTime();
+      
+      const progress = Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100));
+      return progress;
+    }
+    
+    return 0;
+  };
+  
+  // Get progress color based on percentage with gradient transitions
+  const getProgressColor = (percentage) => {
+    if (percentage < 25) {
+      return 'var(--error-color)';
+    } else if (percentage < 50) {
+      // Transition from error to warning
+      return `linear-gradient(to right, var(--error-color), var(--warning-color))`;
+    } else if (percentage < 75) {
+      // Transition from warning to info
+      return `linear-gradient(to right, var(--warning-color), var(--info-color))`;
+    } else if (percentage < 100) {
+      // Transition from info to success
+      return `linear-gradient(to right, var(--info-color), var(--success-color))`;
+    } else {
+      return 'var(--success-color)';
+    }
+  };
+  
+  // Get solid color for text and small elements
+  const getSolidColor = (percentage) => {
+    if (percentage < 25) {
+      return 'var(--error-color)';
+    } else if (percentage < 50) {
+      return 'var(--warning-color)';
+    } else if (percentage < 75) {
+      return 'var(--info-color)';
+    } else {
+      return 'var(--success-color)';
+    }
+  };
+  
+  // Get today's fasting record for a participant
+  const getParticipantTodayRecord = (userId) => {
+    if (!participantRecords[userId] || participantRecords[userId].length === 0) {
+      return null;
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return participantRecords[userId].find(record => {
+      const recordDate = record.date.toDate();
+      recordDate.setHours(0, 0, 0, 0);
+      return recordDate.getTime() === today.getTime();
+    });
   };
   
   // Handle sending a taunt or clap to a participant
@@ -127,6 +218,29 @@ function FriendsTab() {
     // Open WhatsApp
     window.open(whatsappUrl, '_blank');
   };
+  
+  // Format time for display
+  const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+  
+  // Get fasting status text
+  const getFastingStatusText = (record) => {
+    if (!record) return 'Not started';
+    
+    switch (record.status) {
+      case 'ongoing':
+        return 'Fasting';
+      case 'completed':
+        return 'Completed';
+      case 'broken':
+        return 'Broken';
+      default:
+        return 'Unknown';
+    }
+  };
 
   return (
     <div className="friends-tab">
@@ -159,6 +273,132 @@ function FriendsTab() {
                 <p>Share code: <strong>{activeChallenge.inviteCode}</strong></p>
               </div>
             </div>
+          </div>
+          
+          {/* Challenge Progress Tracking - Milestone 6 implementation */}
+          <div className="challenge-progress">
+            <h3>Challenge Progress</h3>
+            
+            {isLoading ? (
+              <div className="loading">Loading participants...</div>
+            ) : challengeParticipants.length > 0 ? (
+              <div className="participant-list">
+                {challengeParticipants.map((participant) => {
+                  const todayRecord = getParticipantTodayRecord(participant.userId);
+                  const progressPercentage = calculateFastProgress(todayRecord);
+                  
+                  return (
+                    <div key={participant.userId} className="participant-card">
+                      <div className="participant-header">
+                        <div className="participant-info">
+                          <div className="participant-avatar">
+                            {participant.photoURL ? (
+                              <img src={participant.photoURL} alt={participant.displayName} />
+                            ) : (
+                              <div className="avatar-placeholder">
+                                {participant.displayName ? participant.displayName[0].toUpperCase() : '?'}
+                              </div>
+                            )}
+                          </div>
+                          <div className="participant-details">
+                            <h4>{participant.displayName || 'Anonymous'}</h4>
+                            <p className="participant-stats">
+                              <span>Completed: {participant.completedDays} days</span>
+                              <span>Score: {participant.totalScore}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="participant-rank">#{participant.rank}</div>
+                      </div>
+                      
+                      <div className="participant-progress">
+                        <div className="progress-status">
+                          <span style={{ color: getSolidColor(progressPercentage) }}>{getFastingStatusText(todayRecord)}</span>
+                          <span style={{ color: getSolidColor(progressPercentage) }}>{Math.round(progressPercentage)}%</span>
+                        </div>
+                        <div className="progress-bar-container">
+                          <div 
+                            className="progress-bar" 
+                            style={{
+                              width: `${progressPercentage}%`,
+                              backgroundImage: getProgressColor(progressPercentage)
+                            }}
+                          ></div>
+                        </div>
+                        {todayRecord && (
+                          <div className="progress-times">
+                            <span>Started: {formatTime(todayRecord.startTime)}</span>
+                            <span>Target: {formatTime(todayRecord.targetEndTime)}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="participant-actions">
+                        <button
+                          className="action-button clap-button"
+                          onClick={() => handleSendInteraction(participant.userId, 'clap')}
+                          disabled={participant.userId === user.uid}
+                        >
+                          👏 Clap
+                        </button>
+                        <button
+                          className="action-button taunt-button"
+                          onClick={() => handleSendInteraction(participant.userId, 'taunt')}
+                          disabled={participant.userId === user.uid}
+                        >
+                          😈 Taunt
+                        </button>
+                        <button
+                          className="action-button history-button"
+                          onClick={() => handleToggleParticipantDay(participant.userId)}
+                        >
+                          {selectedDay === participant.userId ? 'Hide History' : 'Show History'}
+                        </button>
+                      </div>
+                      
+                      {selectedDay === participant.userId && (
+                        <div className="participant-history">
+                          <h5>Challenge History</h5>
+                          <div className="daily-records">
+                            {participantRecords[participant.userId]?.length > 0 ? (
+                              participantRecords[participant.userId].map((record, index) => (
+                                <div key={index} className="daily-record-card">
+                                  <div className="daily-record-date">
+                                    {formatDate(record.date)}
+                                  </div>
+                                  <div className="daily-record-status" style={{color: getSolidColor(record.completionPercentage || 0)}}>
+                                    {record.status === 'completed' ? 'Completed' : 
+                                     record.status === 'broken' ? 'Broken' : 'Ongoing'}
+                                  </div>
+                                  <div className="daily-record-progress">
+                                    <div className="mini-progress-container">
+                                      <div 
+                                        className="mini-progress-bar" 
+                                        style={{
+                                          width: `${record.completionPercentage || 0}%`,
+                                          backgroundColor: getSolidColor(record.completionPercentage || 0)
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <span>{Math.round(record.completionPercentage || 0)}%</span>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-records">No fasting records yet</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="no-participants">
+                <p>No participants in this challenge yet. Invite some friends!</p>
+              </div>
+            )}
           </div>
         </div>
       ) : (
