@@ -9,8 +9,20 @@ import {
   where, 
   getDocs, 
   addDoc, 
+  deleteDoc,
+  writeBatch,
   Timestamp 
 } from 'firebase/firestore';
+
+// Helper function to generate unique ID for invites
+const generateUniqueInviteId = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
 
 // User profile functions
 export const createUserProfile = async (userId, phoneNumber) => {
@@ -40,7 +52,11 @@ export const createUserProfile = async (userId, phoneNumber) => {
         startReminder: true,
         endReminder: true,
         encouragementMessages: true,
-      }
+      },
+      // New fields for milestone 1
+      userState: 'new',
+      activeChallenge: null,
+      uniqueInviteId: generateUniqueInviteId()
     };
     
     await setDoc(userRef, userData);
@@ -201,7 +217,7 @@ export const getFastingRecords = async (userId, limit = 7) => {
 };
 
 // Challenge functions
-export const createChallenge = async (name, description, startDate, endDate, rules, creatorId) => {
+export const createChallenge = async (name, description, startDate, endDate, fastingType, creatorId) => {
   try {
     const challengeData = {
       name,
@@ -209,11 +225,12 @@ export const createChallenge = async (name, description, startDate, endDate, rul
       creatorId,
       startDate: Timestamp.fromDate(new Date(startDate)),
       endDate: Timestamp.fromDate(new Date(endDate)),
-      rules,
       participants: [creatorId],
-      status: 'upcoming',
+      status: 'active', // Updated to use 'active' instead of 'upcoming'
       isPublic: true,
-      inviteCode: Math.random().toString(36).substring(2, 8).toUpperCase()
+      inviteCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+      // New fields for milestone 1
+      fastingType: fastingType // '16:8', 'OMAD', or 'Long fast'
     };
     
     const docRef = await addDoc(collection(db, 'challenges'), challengeData);
@@ -229,6 +246,13 @@ export const createChallenge = async (name, description, startDate, endDate, rul
       completedDays: 0
     });
     
+    // Update the creator's user profile to set this as their active challenge
+    const userRef = doc(db, 'users', creatorId);
+    await updateDoc(userRef, {
+      activeChallenge: docRef.id,
+      userState: 'active' // Set user state to active when they create a challenge
+    });
+    
     return { id: docRef.id, ...challengeData };
   } catch (error) {
     console.error('Error creating challenge:', error);
@@ -238,7 +262,20 @@ export const createChallenge = async (name, description, startDate, endDate, rul
 
 export const joinChallenge = async (challengeId, userId) => {
   try {
-    // First verify the challenge exists and user is not already a participant
+    // First check if the user already has an active challenge
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userSnap.data();
+    if (userData.activeChallenge) {
+      throw new Error('You already have an active challenge. You must complete or leave it before joining a new one.');
+    }
+    
+    // Verify the challenge exists and user is not already a participant
     const challengeRef = doc(db, 'challenges', challengeId);
     const challengeSnap = await getDoc(challengeRef);
     
@@ -247,6 +284,11 @@ export const joinChallenge = async (challengeId, userId) => {
     }
     
     const challengeData = challengeSnap.data();
+    
+    // Check if challenge is expired
+    if (challengeData.status === 'expired') {
+      throw new Error('This challenge has expired');
+    }
     
     if (challengeData.participants.includes(userId)) {
       return { success: true, message: 'Already a participant' };
@@ -268,9 +310,186 @@ export const joinChallenge = async (challengeId, userId) => {
       completedDays: 0
     });
     
+    // Update the user's profile to set this as their active challenge and change state to active
+    await updateDoc(userRef, {
+      activeChallenge: challengeId,
+      userState: 'active'
+    });
+    
     return { success: true, message: 'Successfully joined challenge' };
   } catch (error) {
     console.error('Error joining challenge:', error);
+    throw error;
+  }
+};
+
+// User state management functions
+export const updateUserState = async (userId, newState) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      userState: newState,
+      lastActive: Timestamp.now()
+    });
+    return true;
+  } catch (error) {
+    console.error('Error updating user state:', error);
+    throw error;
+  }
+};
+
+export const leaveChallenge = async (userId) => {
+  try {
+    // Get user data first to verify they have an active challenge
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userSnap.data();
+    
+    if (!userData.activeChallenge) {
+      throw new Error('You are not currently in any challenge');
+    }
+    
+    const challengeId = userData.activeChallenge;
+    
+    // Get the challenge
+    const challengeRef = doc(db, 'challenges', challengeId);
+    const challengeSnap = await getDoc(challengeRef);
+    
+    if (challengeSnap.exists()) {
+      const challengeData = challengeSnap.data();
+      
+      // Remove user from participants array
+      const updatedParticipants = challengeData.participants.filter(id => id !== userId);
+      
+      await updateDoc(challengeRef, {
+        participants: updatedParticipants
+      });
+    }
+    
+    // Update user profile
+    await updateDoc(userRef, {
+      activeChallenge: null,
+      userState: 'inactive' // Set to inactive when leaving a challenge
+    });
+    
+    // Find and delete challenge participant record
+    const q = query(
+      collection(db, 'challengeParticipants'),
+      where('challengeId', '==', challengeId),
+      where('userId', '==', userId)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach(async (doc) => {
+      await deleteDoc(doc.ref);
+    });
+    
+    return { success: true, message: 'Successfully left the challenge' };
+  } catch (error) {
+    console.error('Error leaving challenge:', error);
+    throw error;
+  }
+};
+
+// Challenge expiration function
+export const checkAndExpireChallenges = async () => {
+  try {
+    const now = new Date();
+    
+    // Get all active challenges
+    const q = query(
+      collection(db, 'challenges'),
+      where('status', '==', 'active'),
+      where('endDate', '<', Timestamp.fromDate(now))
+    );
+    
+    const querySnapshot = await getDocs(q);
+    let expired = 0;
+    
+    // Update each expired challenge
+    const batch = writeBatch(db);
+    
+    querySnapshot.forEach((doc) => {
+      batch.update(doc.ref, { status: 'expired' });
+      expired++;
+    });
+    
+    if (expired > 0) {
+      await batch.commit();
+    }
+    
+    return { success: true, expiredCount: expired };
+  } catch (error) {
+    console.error('Error checking for expired challenges:', error);
+    throw error;
+  }
+};
+
+export const getUserActiveChallenge = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userSnap.data();
+    
+    if (!userData.activeChallenge) {
+      return null;
+    }
+    
+    // Get the active challenge details
+    const challengeRef = doc(db, 'challenges', userData.activeChallenge);
+    const challengeSnap = await getDoc(challengeRef);
+    
+    if (!challengeSnap.exists()) {
+      // If the challenge doesn't exist but was set in user profile, update user profile
+      await updateDoc(userRef, {
+        activeChallenge: null
+      });
+      return null;
+    }
+    
+    return {
+      id: challengeSnap.id,
+      ...challengeSnap.data()
+    };
+  } catch (error) {
+    console.error('Error getting user active challenge:', error);
+    throw error;
+  }
+};
+
+// Function to get challenge by invite code
+export const getChallengeByInviteCode = async (inviteCode) => {
+  try {
+    const q = query(
+      collection(db, 'challenges'),
+      where('inviteCode', '==', inviteCode)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      throw new Error('Invalid invite code. Challenge not found.');
+    }
+    
+    // Get the first (and should be only) document
+    const doc = querySnapshot.docs[0];
+    
+    return {
+      id: doc.id,
+      ...doc.data()
+    };
+  } catch (error) {
+    console.error('Error getting challenge by invite code:', error);
     throw error;
   }
 };

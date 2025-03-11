@@ -1,52 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import FastTab from './components/FastTab';
 import FriendsTab from './components/FriendsTab';
 import MeTab from './components/MeTab';
 import Auth from './components/Auth/Signup';
+import CreateChallenge from './components/Challenge/CreateChallenge';
+import JoinChallenge from './components/Challenge/JoinChallenge';
+import { UserProvider, useUser } from './contexts/UserContext';
 import { auth } from './firebase';
 import './App.css';
 import './styles/colors.css';
 import './styles/components.css';
 
-function App() {
-  const [activeTab, setActiveTab] = useState('fast');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+// Layout component with navigation
+function AppLayout({ children }) {
+  const { user } = useUser();
+  const [activeTab, setActiveTab] = React.useState(() => {
+    // Determine active tab based on current path
+    const path = window.location.pathname;
+    if (path.includes('/friends')) return 'friends';
+    if (path.includes('/me')) return 'me';
+    return 'fast';
+  });
 
-  useEffect(() => {
-    const checkAuthState = () => {
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          setIsAuthenticated(true);
-        } else {
-          const storedUser = localStorage.getItem('user');
-          if (storedUser) {
-            setIsAuthenticated(true);
-          }
-        }
-        setIsLoading(false);
-      });
-    };
-
-    checkAuthState();
-  }, []);
-
-  const handleLogout = () => {
-    auth.signOut().then(() => {
-      localStorage.removeItem('user');
-      setIsAuthenticated(false);
-    }).catch((error) => {
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+    } catch (error) {
       console.error("Error signing out:", error);
-    });
+    }
   };
-
-  if (isLoading) {
-    return <div className="loading">Loading...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Auth setIsAuthenticated={setIsAuthenticated} />;
-  }
 
   return (
     <div className="App">
@@ -59,34 +42,100 @@ function App() {
           />
           <h1>My Fasting Friends</h1>
         </div>
-        <button onClick={handleLogout} className="logout-button">Logout</button>
+        {user && <button onClick={handleLogout} className="logout-button">Logout</button>}
       </header>
       <main>
-        {activeTab === 'fast' && <FastTab />}
-        {activeTab === 'friends' && <FriendsTab />}
-        {activeTab === 'me' && <MeTab />}
+        {children}
       </main>
       <nav className="bottom-nav">
-        <button
+        <a
+          href="/"
           className={activeTab === 'fast' ? 'active' : ''}
-          onClick={() => setActiveTab('fast')}
+          onClick={(e) => {
+            e.preventDefault();
+            setActiveTab('fast');
+            window.history.pushState(null, '', '/');
+          }}
         >
           Fast
-        </button>
-        <button
+        </a>
+        <a
+          href="/friends"
           className={activeTab === 'friends' ? 'active' : ''}
-          onClick={() => setActiveTab('friends')}
+          onClick={(e) => {
+            e.preventDefault();
+            setActiveTab('friends');
+            window.history.pushState(null, '', '/friends');
+          }}
         >
           Friends
-        </button>
-        <button
+        </a>
+        <a
+          href="/me"
           className={activeTab === 'me' ? 'active' : ''}
-          onClick={() => setActiveTab('me')}
+          onClick={(e) => {
+            e.preventDefault();
+            setActiveTab('me');
+            window.history.pushState(null, '', '/me');
+          }}
         >
           Me
-        </button>
+        </a>
       </nav>
     </div>
+  );
+}
+
+// Protected Route component
+function ProtectedRoute({ children }) {
+  const { user, loading } = useUser();
+  
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" />;
+  }
+  
+  return <AppLayout>{children}</AppLayout>;
+}
+
+// Auth Route component
+function AuthRoute() {
+  const { user, loading } = useUser();
+  
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+  
+  if (user) {
+    return <Navigate to="/" />;
+  }
+  
+  return <Auth />;
+}
+
+// Main App component wrapped with UserProvider
+function App() {
+  return (
+    <UserProvider>
+      <Router>
+        <Routes>
+          <Route path="/auth" element={<AuthRoute />} />
+          
+          <Route path="/" element={<ProtectedRoute><FastTab /></ProtectedRoute>} />
+          <Route path="/friends" element={<ProtectedRoute><FriendsTab /></ProtectedRoute>} />
+          <Route path="/me" element={<ProtectedRoute><MeTab /></ProtectedRoute>} />
+          
+          <Route path="/create-challenge" element={<ProtectedRoute><CreateChallenge /></ProtectedRoute>} />
+          <Route path="/join-challenge" element={<ProtectedRoute><JoinChallenge /></ProtectedRoute>} />
+          
+          {/* Redirect any unknown routes to home */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    </UserProvider>
   );
 }
 

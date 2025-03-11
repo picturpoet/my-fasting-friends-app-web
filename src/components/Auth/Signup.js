@@ -6,7 +6,7 @@ import '../../App.css';
 import '../../styles/colors.css';
 import '../../styles/components.css';
 
-function Signup({ setIsAuthenticated }) {
+function Signup() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [confirmationResult, setConfirmationResult] = useState(null);
@@ -106,16 +106,7 @@ function Signup({ setIsAuthenticated }) {
       setError('');
 
       const result = await confirmationResult.confirm(verificationCode);
-      const user = result.user;
-
-      await createUserProfile(user.uid, user.phoneNumber);
-
-      localStorage.setItem('user', JSON.stringify({
-        uid: user.uid,
-        phoneNumber: user.phoneNumber
-      }));
-
-      setIsAuthenticated(true);
+      // Authentication is handled by our UserContext now
     } catch (error) {
       console.error("Error verifying code:", error);
       setError(`Verification failed: ${error.message}`);
@@ -124,13 +115,14 @@ function Signup({ setIsAuthenticated }) {
     }
   };
 
-  // For testing only - bypass phone auth
+  // For testing only - bypass phone auth in development
   const handleTestLogin = () => {
-    localStorage.setItem('user', JSON.stringify({
-      uid: 'test-user-id',
-      phoneNumber: '+91' + phoneNumber
-    }));
-    setIsAuthenticated(true);
+    if (process.env.NODE_ENV === 'development') {
+      // This will only work in an emulator environment
+      console.log('Using test login in development');
+    } else {
+      setError('Test login is only available in development mode');
+    }
   };
 
   return (
@@ -183,13 +175,15 @@ function Signup({ setIsAuthenticated }) {
             </button>
 
             {/* Test login button - for development only */}
-            <button
-              onClick={handleTestLogin}
-              className="secondary-button"
-              style={{ marginTop: '10px' }}
-            >
-              Test Login (Skip OTP)
-            </button>
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={handleTestLogin}
+                className="secondary-button"
+                style={{ marginTop: '10px' }}
+              >
+                Test Login (Skip OTP)
+              </button>
+            )}
           </div>
         ) : (
           <div className="verification-container">

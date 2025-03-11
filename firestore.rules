@@ -29,11 +29,27 @@ service cloud.firestore {
              && get(/databases/$(database)/documents/challenges/$(challengeId)).data.participants.hasAny([request.auth.uid]);
     }
     
+    function hasActiveChallenge() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.activeChallenge != null;
+    }
+    
+    function isChallengeActive(challengeId) {
+      return exists(/databases/$(database)/documents/challenges/$(challengeId))
+             && get(/databases/$(database)/documents/challenges/$(challengeId)).data.status == 'active';
+    }
+    
     // Rules for each collection
     match /users/{userId} {
       // Anyone can read basic profile info, but only the owner can write or read full details
       allow read: if isSignedIn() && (isOwner(userId) || resource.data.displayName != null);
       allow write: if isSignedIn() && isOwner(userId);
+      
+      // Validate userState field
+      allow update: if isSignedIn() && isOwner(userId) && 
+                      (request.resource.data.userState == 'new' || 
+                       request.resource.data.userState == 'active' || 
+                       request.resource.data.userState == 'inactive');
     }
     
     match /fastingRecords/{recordId} {
@@ -44,29 +60,48 @@ service cloud.firestore {
     match /challenges/{challengeId} {
       // Public challenges can be read by anyone, private challenges only by participants
       allow read: if isSignedIn() && (resource.data.isPublic || isChallengeMember(challengeId));
+      
       // Only the creator can update challenge details
       allow update: if isSignedIn() && isOwner(resource.data.creatorId);
-      // Anyone can create a challenge
-      allow create: if isSignedIn() && request.resource.data.creatorId == request.auth.uid;
+      
+      // Anyone can create a challenge if they don't already have an active one
+      allow create: if isSignedIn() && 
+                      request.resource.data.creatorId == request.auth.uid && 
+                      !hasActiveChallenge() && 
+                      request.resource.data.status == 'active';
+      
       // Only the creator can delete a challenge
       allow delete: if isSignedIn() && isOwner(resource.data.creatorId);
+      
+      // Validate status field
+      allow update: if isSignedIn() && 
+                      (request.resource.data.status == 'active' || 
+                       request.resource.data.status == 'expired');
     }
     
     match /challengeParticipants/{participantId} {
       // Challenge participants can see other participants' records
       allow read: if isSignedIn() && isChallengeMember(resource.data.challengeId);
+      
       // Users can only write their own participation records
-      allow write: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow create: if isSignedIn() && 
+                    isOwner(request.resource.data.userId) && 
+                    !hasActiveChallenge() && 
+                    isChallengeActive(request.resource.data.challengeId);
+      
+      allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
     }
     
     match /friendships/{friendshipId} {
       // Both users in a friendship can read the friendship document
       allow read: if isSignedIn() && (isOwner(resource.data.user1Id) || isOwner(resource.data.user2Id));
+      
       // Users can create friendship requests
       allow create: if isSignedIn() && (
         request.resource.data.user1Id == request.auth.uid || 
         request.resource.data.user2Id == request.auth.uid
       );
+      
       // Only the recipient can update the status (accept/reject)
       allow update: if isSignedIn() && (
         (isOwner(resource.data.user2Id) && resource.data.initiatedBy == resource.data.user1Id) ||
@@ -77,6 +112,7 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       // Users can only read and delete their own notifications
       allow read, delete: if isSignedIn() && isOwner(resource.data.userId);
+      
       // Anyone can create a notification for another user (e.g., friend requests)
       allow create: if isSignedIn();
     }
@@ -84,6 +120,7 @@ service cloud.firestore {
     match /achievements/{achievementId} {
       // Anyone can read another user's achievements
       allow read: if isSignedIn();
+      
       // Only the system or owner can create/update achievements
       allow write: if isSignedIn() && isOwner(request.resource.data.userId);
     }
