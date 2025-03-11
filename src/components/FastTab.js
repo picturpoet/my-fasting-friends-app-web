@@ -4,10 +4,13 @@ import PastRing from './PastRing';
 import Banner from './Banner';
 import { auth } from '../firebase';
 import { getUserProfile, updateUserProfile, startFasting, endFasting, getFastingRecords } from '../services/firestoreService';
+import { useUser } from '../contexts/UserContext';
 
 function FastTab() {
-  // User state
-  const [user, setUser] = useState(null);
+  // Use UserContext
+  const { user, activeChallenge } = useUser();
+  
+  // State
   const [userProfile, setUserProfile] = useState(null);
   
   // Fasting state
@@ -17,19 +20,17 @@ function FastTab() {
   const [activeFastingRecord, setActiveFastingRecord] = useState(null);
   const [pastRecords, setPastRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [challengeCountdown, setChallengeCountdown] = useState(null);
   
   // Fetch user profile on component mount
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Get current user
-        const currentUser = auth.currentUser;
-        if (!currentUser) return;
-        
-        setUser(currentUser);
+        // User is now from UserContext, so no need to get from auth
+        if (!user) return;
         
         // Get user profile from Firestore
-        const profile = await getUserProfile(currentUser.uid);
+        const profile = await getUserProfile(user.uid);
         setUserProfile(profile);
         
         // Set fasting preferences from profile
@@ -39,7 +40,7 @@ function FastTab() {
         }
         
         // Get past fasting records
-        const records = await getFastingRecords(currentUser.uid);
+        const records = await getFastingRecords(user.uid);
         
         // Check if there's an active fasting record (status = 'ongoing')
         const activeRecord = records.find(record => record.status === 'ongoing');
@@ -53,6 +54,10 @@ function FastTab() {
         // Set past records (excluding active one)
         setPastRecords(records.filter(record => record.status !== 'ongoing'));
         
+        // Set up challenge countdown if there's an active challenge
+        if (activeChallenge) {
+          updateChallengeCountdown();
+        }
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -61,7 +66,7 @@ function FastTab() {
     };
     
     fetchUserData();
-  }, []);
+  }, [user, activeChallenge]);
   
   // Calculate progress for a fasting record
   const calculateProgressForRecord = (record) => {
@@ -97,6 +102,41 @@ function FastTab() {
     
     return () => clearInterval(intervalId);
   }, [activeFastingRecord]);
+  
+  // Calculate challenge countdown
+  const updateChallengeCountdown = () => {
+    if (!activeChallenge) return;
+    
+    const now = new Date();
+    const startDate = activeChallenge.startDate.toDate();
+    
+    // If challenge hasn't started yet
+    if (startDate > now) {
+      const diffTime = Math.abs(startDate - now);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setChallengeCountdown(`Challenge starts in ${diffDays} day${diffDays !== 1 ? 's' : ''}`);
+    } 
+    // If challenge is active
+    else {
+      const endDate = activeChallenge.endDate.toDate();
+      const diffTime = Math.abs(endDate - now);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setChallengeCountdown(`${diffDays} day${diffDays !== 1 ? 's' : ''} left in challenge`);
+    }
+  };
+  
+  // Update challenge countdown when activeChallenge changes and periodically
+  useEffect(() => {
+    if (activeChallenge) {
+      updateChallengeCountdown();
+      
+      // Update countdown every hour
+      const intervalId = setInterval(updateChallengeCountdown, 3600000);
+      return () => clearInterval(intervalId);
+    } else {
+      setChallengeCountdown(null);
+    }
+  }, [activeChallenge]);
   
   // Calculate end time based on fasting type and start time
   const calculateEndTime = useCallback((start, type) => {
@@ -163,8 +203,9 @@ function FastTab() {
     if (!user) return;
     
     try {
-      // Create a new fasting record in Firestore
-      const record = await startFasting(user.uid, fastingType, startTime);
+      // Create a new fasting record in Firestore with challenge ID if available
+      const challengeId = activeChallenge ? activeChallenge.id : null;
+      const record = await startFasting(user.uid, fastingType, startTime, challengeId);
       setActiveFastingRecord(record);
       setDailyProgress(0); // Reset progress to 0 for new fast
     } catch (error) {
@@ -197,6 +238,17 @@ function FastTab() {
     <div className="fast-tab">
       <h2>Track Your Fast</h2>
       
+      {/* Challenge banner - show when there's an active challenge */}
+      {activeChallenge && (
+        <div className="challenge-banner">
+          <h3>Challenge: {activeChallenge.name}</h3>
+          {challengeCountdown && <p className="challenge-countdown">{challengeCountdown}</p>}
+          {activeChallenge.fastingType && (
+            <p className="challenge-type">Using {activeChallenge.fastingType} fasting method</p>
+          )}
+        </div>
+      )}
+      
       {/* Banner showing fasting schedule */}
       <Banner 
         isFasting={!!activeFastingRecord} 
@@ -209,8 +261,16 @@ function FastTab() {
       {/* Fasting controls */}
       <div className="fasting-controls">
         {!activeFastingRecord ? (
-          <button className="primary-button" onClick={handleStartFasting}>
-            Start Fasting
+          <button 
+            className="primary-button" 
+            onClick={handleStartFasting}
+            disabled={activeChallenge?.startDate?.toDate() > new Date()}
+          >
+            {activeChallenge?.startDate?.toDate() > new Date() 
+              ? "Challenge hasn't started yet" 
+              : activeChallenge 
+                ? "Start Challenge Fast" 
+                : "Start Fasting"}
           </button>
         ) : (
           <button className="secondary-button" onClick={handleEndFasting}>

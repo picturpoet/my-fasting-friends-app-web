@@ -98,7 +98,7 @@ export const updateUserProfile = async (userId, data) => {
 };
 
 // Fasting records functions
-export const startFasting = async (userId, fastingType, startTime) => {
+export const startFasting = async (userId, fastingType, startTime, challengeId = null) => {
   try {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -135,6 +135,7 @@ export const startFasting = async (userId, fastingType, startTime) => {
       actualDuration: 0,
       completionPercentage: 0,
       status: 'ongoing',
+      challengeId, // Add challenge ID if available
       notes: ''
     };
     
@@ -167,20 +168,65 @@ export const endFasting = async (recordId) => {
     const actualDurationMs = actualEndTime.getTime() - startTime.getTime();
     const actualDurationMins = Math.floor(actualDurationMs / (1000 * 60));
     const completionPercentage = Math.min(100, (actualDurationMs / targetDurationMs) * 100);
+    const isCompleted = completionPercentage >= 100;
     
     await updateDoc(recordRef, {
       actualEndTime: Timestamp.fromDate(actualEndTime),
       actualDuration: actualDurationMins,
       completionPercentage: completionPercentage,
-      status: completionPercentage >= 100 ? 'completed' : 'broken'
+      status: isCompleted ? 'completed' : 'broken'
     });
+    
+    // If this fast is part of a challenge, update challenge participant record
+    if (recordData.challengeId) {
+      try {
+        // Find the participant record for this user in this challenge
+        const q = query(
+          collection(db, 'challengeParticipants'),
+          where('challengeId', '==', recordData.challengeId),
+          where('userId', '==', recordData.userId)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const participantDoc = querySnapshot.docs[0];
+          const participantData = participantDoc.data();
+          
+          // Only update if the fast was completed
+          if (isCompleted) {
+            await updateDoc(participantDoc.ref, {
+              completedDays: participantData.completedDays + 1,
+              totalScore: participantData.totalScore + 10, // Basic scoring: +10 per completed fast
+              dailyScores: [...participantData.dailyScores, {
+                date: Timestamp.fromDate(now), 
+                score: 10,
+                fastingRecord: recordId
+              }]
+            });
+          } else {
+            // If not completed, still record the attempt but with lower score
+            await updateDoc(participantDoc.ref, {
+              dailyScores: [...participantData.dailyScores, {
+                date: Timestamp.fromDate(now), 
+                score: Math.floor(completionPercentage / 20), // 0-5 points based on completion
+                fastingRecord: recordId
+              }]
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error updating challenge statistics:', error);
+        // Continue with the function even if this fails
+      }
+    }
     
     return {
       ...recordData,
       actualEndTime: Timestamp.fromDate(actualEndTime),
       actualDuration: actualDurationMins,
       completionPercentage: completionPercentage,
-      status: completionPercentage >= 100 ? 'completed' : 'broken'
+      status: isCompleted ? 'completed' : 'broken'
     };
   } catch (error) {
     console.error('Error ending fasting:', error);
@@ -212,6 +258,45 @@ export const getFastingRecords = async (userId, limit = 7) => {
     return records.slice(0, limit);
   } catch (error) {
     console.error('Error getting fasting records:', error);
+    throw error;
+  }
+};
+
+export const getChallengeFastingRecords = async (challengeId, userId = null) => {
+  try {
+    let q;
+    
+    if (userId) {
+      // Get records for specific user in challenge
+      q = query(
+        collection(db, 'fastingRecords'),
+        where('challengeId', '==', challengeId),
+        where('userId', '==', userId)
+      );
+    } else {
+      // Get all records for the challenge
+      q = query(
+        collection(db, 'fastingRecords'),
+        where('challengeId', '==', challengeId)
+      );
+    }
+    
+    const querySnapshot = await getDocs(q);
+    let records = [];
+    
+    querySnapshot.forEach((doc) => {
+      records.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    // Sort by date
+    records.sort((a, b) => b.date.seconds - a.date.seconds);
+    
+    return records;
+  } catch (error) {
+    console.error('Error getting challenge fasting records:', error);
     throw error;
   }
 };
@@ -463,6 +548,98 @@ export const getUserActiveChallenge = async (userId) => {
     };
   } catch (error) {
     console.error('Error getting user active challenge:', error);
+    throw error;
+  }
+};
+
+// Function to get global leaderboard
+export const getGlobalLeaderboard = async (limit = 10) => {
+  try {
+    // First get users with highest total completed fasts
+    const usersRef = collection(db, 'users');
+    const querySnapshot = await getDocs(usersRef);
+    
+    // Extract user data and calculate scores based on fasting records
+    const userPromises = querySnapshot.docs.map(async (userDoc) => {
+      const userData = userDoc.data();
+      
+      // Get user's fasting records
+      const fastingRecordsQuery = query(
+        collection(db, 'fastingRecords'),
+        where('userId', '==', userDoc.id),
+        where('status', '==', 'completed')
+      );
+      
+      const fastingRecords = await getDocs(fastingRecordsQuery);
+      const completedFasts = fastingRecords.size;
+      
+      // Calculate total score (10 points per completed fast)
+      const totalScore = completedFasts * 10;
+      
+      return {
+        id: userDoc.id,
+        displayName: userData.displayName || 'Anonymous',
+        photoURL: userData.photoURL || null,
+        completedFasts,
+        totalScore,
+      };
+    });
+    
+    // Resolve all promises
+    let leaderboard = await Promise.all(userPromises);
+    
+    // Sort by total score (descending)
+    leaderboard.sort((a, b) => b.totalScore - a.totalScore);
+    
+    // Return top users
+    return leaderboard.slice(0, limit);
+  } catch (error) {
+    console.error('Error getting global leaderboard:', error);
+    throw error;
+  }
+};
+
+// Function to get challenge participants with their stats
+export const getChallengeParticipants = async (challengeId) => {
+  try {
+    const q = query(
+      collection(db, 'challengeParticipants'),
+      where('challengeId', '==', challengeId)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const participants = [];
+    
+    // Get all participant data
+    for (const docSnapshot of querySnapshot.docs) {
+      const participantData = docSnapshot.data();
+      
+      // Get user details
+      const userRef = doc(db, 'users', participantData.userId);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        
+        participants.push({
+          ...participantData,
+          displayName: userData.displayName || 'Anonymous',
+          photoURL: userData.photoURL || null,
+        });
+      }
+    }
+    
+    // Sort by total score (descending)
+    participants.sort((a, b) => b.totalScore - a.totalScore);
+    
+    // Update ranks based on current scores
+    participants.forEach((participant, index) => {
+      participant.rank = index + 1;
+    });
+    
+    return participants;
+  } catch (error) {
+    console.error('Error getting challenge participants:', error);
     throw error;
   }
 };

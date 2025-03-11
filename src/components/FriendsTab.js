@@ -3,28 +3,96 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import '../styles/colors.css';
 import '../styles/components.css';
+import { getGlobalLeaderboard, getChallengeParticipants } from '../services/firestoreService';
 
 function FriendsTab() {
-  const { user, userProfile, activeChallenge, refreshActiveChallenge } = useUser();
+  const { user, userProfile, activeChallenge, userState, refreshActiveChallenge } = useUser();
   const navigate = useNavigate();
   
   const [isLoading, setIsLoading] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
+  const [globalLeaderboard, setGlobalLeaderboard] = useState([]);
+  const [challengeParticipants, setChallengeParticipants] = useState([]);
+  const [selectedDay, setSelectedDay] = useState(null);
   
   // Load active challenge on component mount
   useEffect(() => {
     const loadData = async () => {
+      setIsLoading(true);
       await refreshActiveChallenge();
+      
+      // Load global leaderboard for new/inactive users
+      if (!activeChallenge) {
+        try {
+          const leaderboard = await getGlobalLeaderboard(10); // Top 10 users
+          setGlobalLeaderboard(leaderboard);
+        } catch (error) {
+          console.error("Error loading leaderboard:", error);
+        }
+      } else {
+        // Load challenge participants for active challenge
+        try {
+          const participants = await getChallengeParticipants(activeChallenge.id);
+          setChallengeParticipants(participants);
+        } catch (error) {
+          console.error("Error loading challenge participants:", error);
+        }
+      }
+      
+      setIsLoading(false);
     };
     
     loadData();
-  }, [refreshActiveChallenge]);
+  }, [refreshActiveChallenge, activeChallenge]);
+  
+  
   
   // Format dates for display
   const formatDate = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleDateString();
+  };
+  
+  // Handle sending a taunt or clap to a participant
+  const handleSendInteraction = async (participantId, interactionType) => {
+    if (!user || !activeChallenge) return;
+    
+    try {
+      // Create a notification for the recipient
+      await addDoc(collection(db, 'notifications'), {
+        userId: participantId,
+        type: interactionType,
+        title: interactionType === 'taunt' ? 'Someone taunted you!' : 'Someone clapped for you!',
+        message: interactionType === 'taunt' 
+          ? `${userProfile?.displayName || 'Someone'} is challenging you to keep up!` 
+          : `${userProfile?.displayName || 'Someone'} is cheering for your progress!`,
+        data: { 
+          senderId: user.uid,
+          challengeId: activeChallenge.id
+        },
+        isRead: false,
+        createdAt: new Date()
+      });
+      
+      // Show success message
+      alert(interactionType === 'taunt' 
+        ? 'Taunt sent! Let\'s see if they can keep up.' 
+        : 'Clap sent! Your encouragement matters.');
+      
+    } catch (error) {
+      console.error(`Error sending ${interactionType}:`, error);
+      alert('Failed to send interaction. Please try again.');
+    }
+  };
+  
+  // Toggle daily progress details for a participant
+  const handleToggleParticipantDay = (participantId) => {
+    if (selectedDay === participantId) {
+      setSelectedDay(null);
+    } else {
+      setSelectedDay(participantId);
+    }
   };
   
   // Generate invitation link when active challenge is available
@@ -95,6 +163,48 @@ function FriendsTab() {
         </div>
       ) : (
         <div className="no-active-challenge">
+          <div className="start-fast-with-friends-banner">
+            <h3>Start a Fast with Friends</h3>
+            <p>Challenge yourself and your friends to complete fasting goals together</p>
+            <div className="banner-buttons">
+              <button className="primary-button" onClick={handleCreateChallenge}>
+                Create Challenge
+              </button>
+              <button className="secondary-button" onClick={handleJoinChallenge}>
+                Join Challenge
+              </button>
+            </div>
+          </div>
+          
+          <div className="leaderboard-section">
+            <h3>Global Leaderboard</h3>
+            {isLoading ? (
+              <div className="loading">Loading leaderboard...</div>
+            ) : globalLeaderboard.length > 0 ? (
+              <div className="leaderboard">
+                <div className="leaderboard-header">
+                  <span className="rank-col">Rank</span>
+                  <span className="name-col">User</span>
+                  <span className="score-col">Completed Fasts</span>
+                  <span className="score-col">Score</span>
+                </div>
+                
+                {globalLeaderboard.map((user, index) => (
+                  <div key={index} className="leaderboard-row">
+                    <span className="rank-col">#{index + 1}</span>
+                    <span className="name-col">{user.displayName || 'Anonymous'}</span>
+                    <span className="score-col">{user.completedFasts || 0}</span>
+                    <span className="score-col">{user.totalScore || 0}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-leaderboard">
+                <p>No data available yet. Start your fasting journey!</p>
+              </div>
+            )}
+          </div>
+          
           <div className="challenge-options">
             <div className="challenge-option-card">
               <h3>Create a Challenge</h3>
