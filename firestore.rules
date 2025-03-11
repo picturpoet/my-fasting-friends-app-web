@@ -64,10 +64,9 @@ service cloud.firestore {
       // Only the creator can update challenge details
       allow update: if isSignedIn() && isOwner(resource.data.creatorId);
       
-      // Anyone can create a challenge if they don't already have an active one
+      // Anyone can create a challenge (removing the hasActiveChallenge check)
       allow create: if isSignedIn() && 
                       request.resource.data.creatorId == request.auth.uid && 
-                      !hasActiveChallenge() && 
                       request.resource.data.status == 'active';
       
       // Only the creator can delete a challenge
@@ -86,7 +85,6 @@ service cloud.firestore {
       // Users can only write their own participation records
       allow create: if isSignedIn() && 
                     isOwner(request.resource.data.userId) && 
-                    !hasActiveChallenge() && 
                     isChallengeActive(request.resource.data.challengeId);
       
       allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
