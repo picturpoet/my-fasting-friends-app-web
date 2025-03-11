@@ -409,7 +409,7 @@ function FriendsTab() {
             <h3>Start a Fast with Friends</h3>
             <p>Challenge yourself and your friends to complete fasting goals together</p>
             <div className="banner-buttons">
-              <button className="secondary-button" onClick={handleCreateChallenge}>
+              <button className="primary-button" onClick={handleCreateChallenge}>
                 Create Challenge
               </button>
               <button className="secondary-button" onClick={handleJoinChallenge}>
@@ -445,30 +445,6 @@ function FriendsTab() {
                 <p>No data available yet. Start your fasting journey!</p>
               </div>
             )}
-          </div>
-          
-          <div className="challenge-options">
-            <div className="challenge-option-card">
-              <h3>Create a Challenge</h3>
-              <p>Start a new fasting challenge and invite your friends to join you</p>
-              <button
-                className="primary-button"
-                onClick={handleCreateChallenge}
-              >
-                Create Challenge
-              </button>
-            </div>
-            
-            <div className="challenge-option-card">
-              <h3>Join a Challenge</h3>
-              <p>Enter an invite code to join a friend's challenge</p>
-              <button
-                className="secondary-button"
-                onClick={handleJoinChallenge}
-              >
-                Join Challenge
-              </button>
-            </div>
           </div>
         </div>
       )}
