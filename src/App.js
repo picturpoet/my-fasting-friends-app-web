@@ -17,7 +17,7 @@ function AppLayout({ children }) {
   const { user } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Determine active tab based on the current path
   const getActiveTab = () => {
     const path = location.pathname;
@@ -34,14 +34,15 @@ function AppLayout({ children }) {
       console.error("Error signing out:", error);
     }
   };
+
   const handleLogoClick = () => {
     navigate('/');
   };
- 
+
   return (
     <div className="App">
       <header className="App-header">
-      <div className="header-left" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
+        <div className="header-left" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
           <img
             src={`${process.env.PUBLIC_URL}/logo192.png`}
             alt="My Fasting Friends Logo"
@@ -93,30 +94,30 @@ function AppLayout({ children }) {
 // Protected Route component
 function ProtectedRoute({ children }) {
   const { user, loading } = useUser();
-  
+
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
-  
+
   if (!user) {
     return <Navigate to="/auth" />;
   }
-  
+
   return <AppLayout>{children}</AppLayout>;
 }
 
 // Auth Route component
 function AuthRoute() {
   const { user, loading } = useUser();
-  
+
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
-  
+
   if (user) {
     return <Navigate to="/" />;
   }
-  
+
   return <Auth />;
 }
 
@@ -124,20 +125,20 @@ function AuthRoute() {
 function App() {
   // Force version update to prevent caching issues
   const appVersion = "1741736023463"; // Update this when deploying changes
-  
+
   return (
     <UserProvider>
       <Router>
         <Routes>
           <Route path="/auth" element={<AuthRoute />} />
-          
+
           <Route path="/" element={<ProtectedRoute><FastTab key={appVersion} /></ProtectedRoute>} />
           <Route path="/friends" element={<ProtectedRoute><FriendsTab key={appVersion} /></ProtectedRoute>} />
           <Route path="/me" element={<ProtectedRoute><MeTab key={appVersion} /></ProtectedRoute>} />
-          
+
           <Route path="/create-challenge" element={<ProtectedRoute><CreateChallenge /></ProtectedRoute>} />
           <Route path="/join-challenge" element={<ProtectedRoute><JoinChallenge /></ProtectedRoute>} />
-          
+
           {/* Redirect any unknown routes to home */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

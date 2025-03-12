@@ -7,7 +7,7 @@
 }
 
 .App-header {
-  background-color: var(--primary-color-dark);
+  background-color: var(--primary-color);
   padding: 1rem;
   color: white;
   display: flex;
