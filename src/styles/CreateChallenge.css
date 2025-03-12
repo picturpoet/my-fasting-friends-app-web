@@ -1,0 +1,66 @@
+.challenge-form-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .challenge-form-container h2 {
+    margin-bottom: 1rem;
+  }
+  
+  .challenge-form-container .form-group {
+    margin-bottom: 1rem;
+  }
+  .challenge-form-container .form-group.half{
+    width:100%
+  }
+  
+  .challenge-form-container .form-row {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .challenge-form-container label {
+    margin-bottom: 0.5rem;
+  }
+  
+  .challenge-form-container textarea {
+    min-height: 100px; /* Adjust the height as needed */
+  }
+  
+  .challenge-form-container select {
+    appearance: none; /* Remove default arrow */
+    background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position-x: 95%;
+    background-position-y: 50%;
+  }
+  
+  .challenge-form-container .form-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+  }
+  
+  @media (min-width: 600px) {
+    .challenge-form-container .form-actions {
+      flex-direction: row;
+      justify-content: flex-end;
+    }
+  }
+  .challenge-form-container .input-group {
+    margin: 0;
+  }
+  
+  .challenge-form-container .input-group.form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .challenge-form-container .input-group.half {
+    width:50%;
+  }
+  

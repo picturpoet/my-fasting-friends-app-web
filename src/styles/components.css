@@ -159,6 +159,23 @@
   font-size: 1rem;
   background-color: transparent; /* Ensure the background is transparent */
 }
+.input-group textarea {
+  flex: 1;
+  padding: 0.8rem 1rem; /* More padding */
+  border: none; /* Remove input border */
+  outline: none;
+  font-size: 1rem;
+  background-color: transparent; /* Ensure the background is transparent */
+  resize: vertical;
+}
+.input-group select {
+  flex: 1;
+  padding: 0.8rem 1rem; /* More padding */
+  border: none; /* Remove input border */
+  outline: none;
+  font-size: 1rem;
+  background-color: transparent; /* Ensure the background is transparent */
+}
 
 .input-group label {
   font-weight: bold;

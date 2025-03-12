@@ -9,8 +9,8 @@ import JoinChallenge from './components/Challenge/JoinChallenge';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { auth } from './firebase';
 import './App.css';
-import '../styles/colors.css';
-import '../styles/components.css';
+import './styles/colors.css';
+import './styles/components.css';
 
 // Layout component with navigation
 function AppLayout({ children }) {
@@ -124,7 +124,7 @@ function AuthRoute() {
 // Main App component wrapped with UserProvider
 function App() {
   // Force version update to prevent caching issues
-  const appVersion = "1741781917714"; // Update this when deploying changes
+  const appVersion = "1741783684951"; // Update this when deploying changes
 
   return (
     <UserProvider>

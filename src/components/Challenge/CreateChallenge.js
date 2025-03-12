@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import { createChallenge } from '../../services/firestoreService';
 import '../../styles/colors.css';
 import '../../styles/components.css';
+import '../../styles/createChallenge.css';
 
 const CreateChallenge = () => {
   const { user, refreshActiveChallenge } = useUser();
   const navigate = useNavigate();
-  
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -16,59 +17,58 @@ const CreateChallenge = () => {
   const [fastingType, setFastingType] = useState('16:8');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Calculate default dates (today and 7 days from now)
   const today = new Date();
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
-  
+
   // Format date as YYYY-MM-DD for input[type="date"]
   const formatDate = (date) => {
     const d = new Date(date);
     let month = '' + (d.getMonth() + 1);
     let day = '' + d.getDate();
     const year = d.getFullYear();
-    
+
     if (month.length < 2) month = '0' + month;
     if (day.length < 2) day = '0' + day;
-    
+
     return [year, month, day].join('-');
   };
-  
+
   // Set default dates on component mount
-  useState(() => {
+  useEffect(() => {
     setStartDate(formatDate(today));
     setEndDate(formatDate(nextWeek));
   }, []);
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!name || !description || !startDate || !endDate || !fastingType) {
       setError('Please fill in all required fields');
       return;
     }
-    
+
     try {
       setIsLoading(true);
       setError('');
-      
+
       // Create challenge in Firestore
       await createChallenge(
-        name, 
-        description, 
-        startDate, 
-        endDate, 
-        fastingType, 
+        name,
+        description,
+        startDate,
+        endDate,
+        fastingType,
         user.uid
       );
-      
+
       // Refresh active challenge data
       await refreshActiveChallenge();
-      
+
       // Navigate back to the friends tab
       navigate('/friends');
-      
     } catch (error) {
       console.error('Error creating challenge:', error);
       setError(error.message);
@@ -76,19 +76,19 @@ const CreateChallenge = () => {
       setIsLoading(false);
     }
   };
-  
+
   const handleCancel = () => {
     navigate('/friends');
   };
-  
+
   return (
     <div className="challenge-form-container">
       <h2>Create a New Challenge</h2>
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
+        <div className="input-group form-group">
           <label htmlFor="name">Challenge Name:</label>
           <input
             type="text"
@@ -99,8 +99,8 @@ const CreateChallenge = () => {
             required
           />
         </div>
-        
-        <div className="form-group">
+
+        <div className="input-group form-group">
           <label htmlFor="description">Description:</label>
           <textarea
             id="description"
@@ -111,8 +111,8 @@ const CreateChallenge = () => {
             required
           ></textarea>
         </div>
-        
-        <div className="form-group">
+
+        <div className="input-group form-group">
           <label htmlFor="fastingType">Fasting Type:</label>
           <select
             id="fastingType"
@@ -125,9 +125,9 @@ const CreateChallenge = () => {
             <option value="Long fast">Long Fast (24+ hours)</option>
           </select>
         </div>
-        
+
         <div className="form-row">
-          <div className="form-group half">
+          <div className="input-group half">
             <label htmlFor="startDate">Start Date:</label>
             <input
               type="date"
@@ -138,8 +138,8 @@ const CreateChallenge = () => {
               required
             />
           </div>
-          
-          <div className="form-group half">
+
+          <div className="input-group half">
             <label htmlFor="endDate">End Date:</label>
             <input
               type="date"
@@ -151,19 +151,19 @@ const CreateChallenge = () => {
             />
           </div>
         </div>
-        
+
         <div className="form-actions">
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={handleCancel}
             className="secondary-button"
             disabled={isLoading}
           >
             Cancel
           </button>
-          
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             className="primary-button"
             disabled={isLoading}
           >

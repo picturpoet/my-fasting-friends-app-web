@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { auth } from '../../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { createUserProfile } from '../../services/firestoreService';
-import '../App.css';
+import '../../App.css';
 import '../../styles/colors.css';
 import '../../styles/components.css';
 
