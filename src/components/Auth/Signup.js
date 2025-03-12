@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { auth } from '../../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { createUserProfile } from '../../services/firestoreService';
-import '../../App.css';
+import '../App.css';
 import '../../styles/colors.css';
 import '../../styles/components.css';
 
@@ -189,14 +189,16 @@ function Signup() {
           <div className="verification-container">
             <p>We've sent a verification code to <strong>+91 {phoneNumber}</strong></p>
             <label htmlFor="verificationCode">Enter OTP:</label>
-            <input
-              type="text"
-              id="verificationCode"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-              placeholder="6-digit code"
-              maxLength={6}
-            />
+              <div className="input-group">
+                <input
+                  type="text"
+                  id="verificationCode"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="6-digit code"
+                  maxLength={6}
+                />
+              </div>
             <div className="button-group">
               <button
                 onClick={handleVerifyCode}
