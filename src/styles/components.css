@@ -126,3 +126,66 @@
   color: var(--dark-gray);
   margin-top: 0.5rem;
 }
+
+/* Input Groups */
+.input-group {
+  display: flex;
+  width: 100%;
+  background-color: var(--white); /* Give it a background color */
+  border: 1px solid var(--border-color); /* Soft border color */
+  border-radius: 6px; /* Softer corners */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Very subtle shadow */
+  overflow: hidden; /* Ensure child elements don't break border radius */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
+}
+
+.input-group:focus-within {
+  border-color: var(--primary-color); /* Highlight on focus */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Slightly more pronounced shadow on focus */
+}
+
+.input-group.no-border {
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+
+.input-group input {
+  flex: 1;
+  padding: 0.8rem 1rem; /* More padding */
+  border: none; /* Remove input border */
+  outline: none;
+  font-size: 1rem;
+  background-color: transparent; /* Ensure the background is transparent */
+}
+
+.input-group label {
+  font-weight: bold;
+  font-size: 1rem;
+  color: var(--text-color);
+}
+
+/* Weight Input Group */
+.input-group.weight-input-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap:0.5rem;
+  }
+
+/* Button Groups */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 300px;
+  gap:0.5rem;
+}
+
+/* Weight Button Group */
+.button-group.weight-button-group {
+  flex-direction: row;
+  justify-content: space-between;
+  max-width: 100%;
+  width:100%;
+}

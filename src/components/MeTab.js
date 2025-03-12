@@ -10,7 +10,7 @@ import {
   addWeightRecord
 } from '../services/firestoreService';
 import '../styles/colors.css';
-import '../styles/app.css';
+import '../styles/components.css';
 import '../styles/meTab.css';
 import {
   LineChart,
@@ -254,14 +254,13 @@ function MeTab() {
           <div className="weight-controls">
             {isAddingWeight ? (
               <div className="input-group weight-input-group">
-                <label htmlFor="newWeight">Current Weight (kg):</label>
                 <input
                   id="newWeight"
                   type="number"
                   step="1"
                   value={newWeight}
                   onChange={(e) => setNewWeight(e.target.value)}
-                  placeholder="Enter your weight in kg"
+                  placeholder="Enter weight (kgs)"
                 />
                 <div className="button-group weight-button-group">
                   <button

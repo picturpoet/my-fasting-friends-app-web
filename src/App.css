@@ -106,14 +106,6 @@
   text-align: center;
 }
 
-.input-group input {
-  flex: 1;
-  padding: 0.8rem;
-  border: none;
-  outline: none;
-  font-size: 1rem;
-}
-
 /* Button styles */
 .primary-button {
   background-color: var(--primary-color);
@@ -207,12 +199,6 @@ main {
   max-width: 300px;
 }
 
-.button-group {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 300px;
-}
 
 label {
   display: block;
