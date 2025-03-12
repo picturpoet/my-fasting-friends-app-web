@@ -159,6 +159,10 @@
   font-size: 1rem;
   background-color: transparent; /* Ensure the background is transparent */
 }
+.input-group.half {
+  width:50%;
+}
+
 .input-group textarea {
   flex: 1;
   padding: 0.8rem 1rem; /* More padding */
@@ -175,6 +179,11 @@
   outline: none;
   font-size: 1rem;
   background-color: transparent; /* Ensure the background is transparent */
+    appearance: none; /* Remove default arrow */
+    background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position-x: 95%;
+    background-position-y: 50%;
 }
 
 .input-group label {
@@ -189,6 +198,13 @@
     align-items: flex-start;
     gap:0.5rem;
   }
+ /* Input group with vertical layout */
+.input-group.form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
 
 /* Button Groups */
 .button-group {
@@ -205,4 +221,25 @@
   justify-content: space-between;
   max-width: 100%;
   width:100%;
+}
+
+/* Form row */
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Form actions */
+.button-group.form-actions {
+  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+@media (min-width: 600px) {
+  .form-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
 }

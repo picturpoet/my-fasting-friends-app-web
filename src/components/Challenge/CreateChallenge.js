@@ -4,7 +4,6 @@ import { useUser } from '../../contexts/UserContext';
 import { createChallenge } from '../../services/firestoreService';
 import '../../styles/colors.css';
 import '../../styles/components.css';
-import '../../styles/createChallenge.css';
 
 const CreateChallenge = () => {
   const { user, refreshActiveChallenge } = useUser();
@@ -88,7 +87,7 @@ const CreateChallenge = () => {
       {error && <div className="error-message">{error}</div>}
 
       <form onSubmit={handleSubmit}>
-        <div className="input-group form-group">
+        <div className="input-group.form-group">
           <label htmlFor="name">Challenge Name:</label>
           <input
             type="text"
@@ -100,7 +99,7 @@ const CreateChallenge = () => {
           />
         </div>
 
-        <div className="input-group form-group">
+        <div className="input-group.form-group">
           <label htmlFor="description">Description:</label>
           <textarea
             id="description"
@@ -112,7 +111,7 @@ const CreateChallenge = () => {
           ></textarea>
         </div>
 
-        <div className="input-group form-group">
+        <div className="input-group.form-group">
           <label htmlFor="fastingType">Fasting Type:</label>
           <select
             id="fastingType"
@@ -152,7 +151,7 @@ const CreateChallenge = () => {
           </div>
         </div>
 
-        <div className="form-actions">
+        <div className="button-group.form-actions">
           <button
             type="button"
             onClick={handleCancel}
