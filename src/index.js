@@ -21,7 +21,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // Add timestamp to localStorage to force refresh on version changes
-const appVersion = "1741736023463";
+const appVersion = "1741773404712";
 const lastVersion = localStorage.getItem('appVersion');
 if (lastVersion !== appVersion) {
   localStorage.setItem('appVersion', appVersion);
