@@ -99,7 +99,7 @@ const CreateChallenge = () => {
           />
         </div>
 
-        <div className="input-group.form-group">
+        <div className="input-group">
           <label htmlFor="description">Description:</label>
           <textarea
             id="description"
@@ -111,7 +111,7 @@ const CreateChallenge = () => {
           ></textarea>
         </div>
 
-        <div className="input-group.form-group">
+        <div className="input-group">
           <label htmlFor="fastingType">Fasting Type:</label>
           <select
             id="fastingType"
