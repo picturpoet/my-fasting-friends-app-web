@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { auth } from '../firebase';
-import { 
-  getUserProfile, 
-  updateUserProfile, 
-  getUserFastingStats, 
+import {
+  getUserProfile,
+  updateUserProfile,
+  getUserFastingStats,
   getWeightRecords,
   getWeightGoal,
   updateWeightGoal,
@@ -12,15 +12,15 @@ import {
 import '../styles/colors.css';
 import '../styles/components.css';
 import '../styles/meTab.css';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  ReferenceLine 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine
 } from 'recharts';
 
 function MeTab() {
@@ -38,14 +38,14 @@ function MeTab() {
 
   // Fasting stats
   const [fastingStats, setFastingStats] = useState(null);
-  
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
         const user = auth.currentUser;
         if (!user) return;
-        
+
         // Fetch basic profile data
         const profile = await getUserProfile(user.uid);
         setUserProfile(profile);
@@ -68,20 +68,20 @@ function MeTab() {
         setIsLoading(false);
       }
     };
-    
+
     fetchUserData();
   }, []);
-  
+
   const handleSaveProfile = async () => {
     try {
       const user = auth.currentUser;
       if (!user) return;
-      
+
       await updateUserProfile(user.uid, { displayName });
-      
+
       setIsEditing(false);
       setMessage('Profile updated successfully!');
-      
+
       // Clear message after 3 seconds
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -102,15 +102,15 @@ function MeTab() {
       }
 
       await addWeightRecord(user.uid, weightValue);
-      
+
       // Refresh weight records
       const updatedRecords = await getWeightRecords(user.uid);
       setWeightRecords(updatedRecords);
-      
+
       setNewWeight('');
       setIsAddingWeight(false);
       setMessage('Weight recorded successfully!');
-      
+
       // Clear message after 3 seconds
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -132,7 +132,7 @@ function MeTab() {
 
       await updateWeightGoal(user.uid, goalWeightValue);
       setMessage('Weight goal updated successfully!');
-      
+
       // Clear message after 3 seconds
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -143,20 +143,20 @@ function MeTab() {
 
   const formatDate = (timestamp) => {
     if (!timestamp) return '';
-    
+
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const formatChartData = () => {
     if (!weightRecords || weightRecords.length === 0) return [];
-    
+
     return weightRecords.map(record => ({
       date: formatDate(record.date),
       weight: record.weight,
     }));
   };
-  
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -164,7 +164,7 @@ function MeTab() {
   return (
     <div className="me-tab">
       {message && <div className="flash-message">{message}</div>}
-      
+
       <div className="profile-details">
         {isEditing ? (
           <>
@@ -179,13 +179,13 @@ function MeTab() {
               />
             </div>
             <div className="button-group">
-              <button 
+              <button
                 className="primary-button"
                 onClick={handleSaveProfile}
               >
                 Save
               </button>
-              <button 
+              <button
                 className="secondary-button"
                 onClick={() => {
                   setDisplayName(userProfile?.displayName || '');
@@ -200,7 +200,7 @@ function MeTab() {
           <>
             <h3>{displayName || 'Set your name'}</h3>
             <p className="phone-number">{auth.currentUser?.phoneNumber}</p>
-            <button 
+            <button
               className="secondary-button"
               onClick={() => setIsEditing(true)}
             >
@@ -209,11 +209,11 @@ function MeTab() {
           </>
         )}
       </div>
-      
+
       {/* Weight Tracking Section */}
       <div className="weight-tracking-section">
         <h3>Weight Tracking</h3>
-        
+
         {weightRecords && weightRecords.length > 0 ? (
           <div className="weight-data-display">
             <div className="weight-table-container">
@@ -247,8 +247,9 @@ function MeTab() {
         ) : (
           <p>No weight records yet. Start tracking your progress!</p>
         )}
-        
+
         <div className="weight-controls-card">
+          {/* Weight Record Adding Section */}
           <div className="weight-controls">
             {isAddingWeight ? (
               <div className="input-group weight-input-group">
@@ -256,19 +257,19 @@ function MeTab() {
                 <input
                   id="newWeight"
                   type="number"
-                  step="0.1"
+                  step="1"
                   value={newWeight}
                   onChange={(e) => setNewWeight(e.target.value)}
                   placeholder="Enter your weight in kg"
                 />
                 <div className="button-group weight-button-group">
-                  <button 
+                  <button
                     className="primary-button"
                     onClick={handleSaveWeight}
                   >
                     Save
                   </button>
-                  <button 
+                  <button
                     className="secondary-button"
                     onClick={() => {
                       setNewWeight('');
@@ -280,7 +281,7 @@ function MeTab() {
                 </div>
               </div>
             ) : (
-              <button 
+              <button
                 className="secondary-button"
                 onClick={() => setIsAddingWeight(true)}
               >
@@ -288,26 +289,31 @@ function MeTab() {
               </button>
             )}
           </div>
-          
-          <div className="goal-weight-control">
-            <label htmlFor="goalWeight">Goal Weight (kg):</label>
-            <input
-              id="goalWeight"
-              type="number"
-              step="0.1"
-              value={goalWeight || ''}
-              onChange={(e) => setGoalWeight(e.target.value)}
-              placeholder="Target weight"
-            />
-            <button 
-              className="secondary-button"
-              onClick={handleSaveGoalWeight}
-            >
-              Set Goal
-            </button>
+          {/* Goal Weight Section  */}
+          <div className="weight-controls">
+            <div className="input-group weight-input-group">
+              <label htmlFor="goalWeight">Goal Weight (kg):</label>
+              <input
+                id="goalWeight"
+                type="number"
+                step="1"
+                value={goalWeight || ''}
+                onChange={(e) => setGoalWeight(e.target.value)}
+                placeholder="Target weight"
+              />
+              <div className="button-group weight-button-group">
+                <button
+                  className="secondary-button"
+                  onClick={handleSaveGoalWeight}
+                >
+                  Set Goal
+                </button>
+              </div>
+            </div>
           </div>
+          
         </div>
-        
+
         {/* Weight Feedback Message */}
         <div className="weight-feedback">
           {weightRecords && weightRecords.length > 0 && goalWeight && (
@@ -325,19 +331,19 @@ function MeTab() {
           )}
         </div>
       </div>
-      
+
       {/* Coffee Support Card */}
       <div className="coffee-support-card">
         <h3>Enjoying the App?</h3>
         <p>If this app is helping you on your fasting journey, consider buying me a coffee!</p>
-        <a 
+        <a
           href="upi://pay?pa=9619696240@upi&pn=Buy RV a coffee&amp;cu=INR&am=144&tn=mff_coffee"
           className="coffee-button"
         >
           Buy me a Coffee ☕️
         </a>
       </div>
-      
+
       {/* Fasting Stats Section */}
       <div className="stats-section">
         <h3>Your Fasting Stats</h3>
@@ -359,7 +365,7 @@ function MeTab() {
             <span className="stat-label">Current Streak</span>
           </div>
         </div>
-        
+
         {/* Challenge-specific stats if user is in a challenge */}
         {fastingStats?.challengeStats && (
           <div className="challenge-stats">
@@ -381,7 +387,7 @@ function MeTab() {
           </div>
         )}
       </div>
-      
+
       <div className="app-info">
         <h3>About My Fasting Friends</h3>
         <p>Version 0.1.0</p>
