@@ -290,28 +290,29 @@ function MeTab() {
             )}
           </div>
           {/* Goal Weight Section  */}
-          <div className="weight-controls">
-            <div className="input-group weight-input-group">
-              <label htmlFor="goalWeight">Goal Weight (kg):</label>
-              <input
-                id="goalWeight"
-                type="number"
-                step="1"
-                value={goalWeight || ''}
-                onChange={(e) => setGoalWeight(e.target.value)}
-                placeholder="Target weight"
-              />
-              <div className="button-group weight-button-group">
-                <button
-                  className="secondary-button"
-                  onClick={handleSaveGoalWeight}
-                >
-                  Set Goal
-                </button>
+          <div className="weight-controls-card">
+            <div className="weight-controls">
+              <div className="input-group weight-input-group">
+                <label htmlFor="goalWeight">Goal Weight (kg):</label>
+                <input
+                  id="goalWeight"
+                  type="number"
+                  step="1"
+                  value={goalWeight || ''}
+                  onChange={(e) => setGoalWeight(e.target.value)}
+                  placeholder="Target weight"
+                />
+                <div className="button-group weight-button-group">
+                  <button
+                    className="secondary-button"
+                    onClick={handleSaveGoalWeight}
+                  >
+                    Set Goal
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          
         </div>
 
         {/* Weight Feedback Message */}
