@@ -35,6 +35,7 @@ function MeTab() {
   const [goalWeight, setGoalWeight] = useState(null);
   const [newWeight, setNewWeight] = useState('');
   const [isAddingWeight, setIsAddingWeight] = useState(false);
+  const [isSettingGoalWeight, setIsSettingGoalWeight] = useState(false);
 
   // Fasting stats
   const [fastingStats, setFastingStats] = useState(null);
@@ -290,8 +291,8 @@ function MeTab() {
             )}
           </div>
           {/* Goal Weight Section  */}
-          <div className="weight-controls-card">
-            <div className="weight-controls">
+          <div className="weight-controls">
+            {isSettingGoalWeight ? (
               <div className="input-group weight-input-group">
                 <label htmlFor="goalWeight">Goal Weight (kg):</label>
                 <input
@@ -309,9 +310,25 @@ function MeTab() {
                   >
                     Set Goal
                   </button>
+                  <button
+                    className="secondary-button"
+                    onClick={() => {
+                      setIsSettingGoalWeight(false);
+                      setGoalWeight(null); // Optionally clear the goal weight
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
-            </div>
+            ) : (
+              <button
+                className="secondary-button" // Use full-width-button for styling
+                onClick={() => setIsSettingGoalWeight(true)}
+              >
+                Set Goal Weight
+              </button>
+            )}
           </div>
         </div>
 
