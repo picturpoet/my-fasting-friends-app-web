@@ -10,7 +10,7 @@ import {
   addWeightRecord
 } from '../services/firestoreService';
 import '../styles/colors.css';
-import '../styles/components.css';
+import '../styles/app.css';
 import '../styles/meTab.css';
 import {
   LineChart,
