@@ -36,14 +36,14 @@ service cloud.firestore {
     }
     
     match /fastingRecords/{recordId} {
-      // Only the owner can read/write their own fasting records
-      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      // Allow anyone to read fasting records, but only owner can write
+      allow read: if isSignedIn();
       allow write: if isSignedIn() && isOwner(request.resource.data.userId);
     }
     
     match /challenges/{challengeId} {
-      // Public challenges can be read by anyone, private challenges only by participants
-      allow read: if isSignedIn() && (resource.data.isPublic || isChallengeMember(challengeId));
+      // Allow reading any challenge
+      allow read: if isSignedIn();
       
       // Allow anyone to create a challenge
       allow create: if isSignedIn() && 
